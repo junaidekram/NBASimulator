@@ -1,0 +1,35 @@
+button {
+    width: 200px;
+    height: 50px;
+    font-size: 30px;
+    text-align: center
+}
+
+
+
+.page {
+    text-align: center;
+    width: 700px;
+    height: 1500px; 
+    background-color: rgb(217, 213, 213);
+}
+
+.pageTitle {
+    font-size: 50px;
+}
+
+#startPage {
+    visibility: hidden;
+}
+
+#simChoicePage {
+    visibility: hidden;
+}
+
+#standingsPage {
+    visibility: hidden;
+}
+
+#simulateScorePage {
+    visibility: hidden;
+} 

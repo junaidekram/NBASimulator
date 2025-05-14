@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>NBA Simulation Game</title>
+    </head>
+    <body> 
+        <div id="homePageContent" class="page" onclick="startGame()">
+            <h1 class="pageTitle">NBA Simulation</h1>
+            <br/>
+            <img src="https://images.ctfassets.net/h8q6lxmb5akt/5qXnOINbPrHKXWa42m6NOa/421ab176b501f5bdae71290a8002545c/nba-logo_2x.png" id="nba-logo"/>
+            <br/> 
+            <button>Play</button>
+        </div>
+        <div id="startPage" class="page">
+            <h1 class="pageTitle">Welcome</h1>
+            <br/>
+            <button id="standings" onclick="standings()">Standings</button>
+            <button id="simulate" onclick="simChoicePage()">Simulate</button>
+            <br/>
+            <br/>
+            <br/>
+            <img src="https://static.vecteezy.com/system/resources/previews/044/311/465/non_2x/nba-basketball-team-logo-collection-nba-tournament-teams-emblems-rivne-ukraine-november-20-2023-free-vector.jpg"/>
+        </div>
+        <div id="simChoicePage" class="page">
+            <h1 class="pageTitle">Choose Simulation Type</h1>
+            <br/>
+            <button id="simScore" onclick="simulateScore()">Score</button>
+            <button id="simGame" onclick="simulateGame()">Game</button>
+        </div>
+        <div id="simulateScorePage" class="page">
+            <h1 class="pageTitle">Simulate Score</h1>
+            <br/>
+            <br/>
+            <br/>
+            <select name="awayTeams" id="awayTeam" >
+                
+                <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+            </select>
+            <label for="homeTeams">Choose Home Team</label>
+
+        </div>
+        <div id="standingsPage" class="page">
+            <h1 class="pageTitle">Standings</h1>
+            <br/>
+            <table>
+                <tr>
+                    <th>Rank</th>
+                    <th>--Team</th>
+                    <th>--Wins</th>
+                    <th>--Losses</th>
+                    <th>--Win%</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr><td>4</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>5</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>6</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>7</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>8</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>9</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr><td>10</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>11</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>12</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>13</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>14</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>15</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>16</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>17</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>18</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>19</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>20</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>21</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>22</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>23</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>24</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>25</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>26</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>27</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>28</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>29</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+                <tr><td>30</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td></tr>
+            </table>
+        </div>
+    </body> 
+</html>
