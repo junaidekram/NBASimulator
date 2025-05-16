@@ -1,3 +1,11 @@
+
+
+
+body {
+    display: grid;
+    place-content: center;
+    text-align: center;
+}
 button {
     width: 200px;
     height: 50px;
@@ -9,27 +17,31 @@ button {
 
 .page {
     text-align: center;
-    width: 700px;
+    width: 900px;
     height: 1500px; 
     background-color: rgb(217, 213, 213);
 }
+
 
 .pageTitle {
     font-size: 50px;
 }
 
-#startPage {
-    visibility: hidden;
+
+
+input {
+    padding: 10px;
+    margin: 10px 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-#simChoicePage {
-    visibility: hidden;
+#message {
+    color: red;
+    margin-top: 10px;
+    text-align: center;
 }
 
-#standingsPage {
-    visibility: hidden;
+.selectBox {
+    font-size: 20px
 }
-
-#simulateScorePage {
-    visibility: hidden;
-} 

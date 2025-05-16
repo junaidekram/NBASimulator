@@ -7,12 +7,22 @@
         <link rel="stylesheet" href="./style.css">
     </head>
     <body> 
-        <div id="homePageContent" class="page" onclick="startGame()">
+        <!--canvas id="myCanvas" width="200" height="100"></canvas-->
+        <div id="homePageContent" class="page">
             <h1 class="pageTitle">NBA Simulation</h1>
             <br/>
             <img src="https://images.ctfassets.net/h8q6lxmb5akt/5qXnOINbPrHKXWa42m6NOa/421ab176b501f5bdae71290a8002545c/nba-logo_2x.png" id="nba-logo"/>
             <br/> 
-            <button>Play</button>
+            <button onclick="startLogin()">Play</button>
+        </div>
+        <div id="loginDiv" class="page">
+            <h2 class="pageTitle">Login / Signup</h2>
+
+        <!-- Form for Login / Signup -->
+            <input type="text" id="username" placeholder="Username" required />
+            <input type="password" id="password" placeholder="Password" required />
+            <button onclick="login()" style="font-size: 15px">Login / Signup</button>
+            <div id="message"></div>
         </div>
         <div id="startPage" class="page">
             <h1 class="pageTitle">Welcome</h1>
@@ -22,25 +32,87 @@
             <br/>
             <br/>
             <br/>
-            <img src="https://static.vecteezy.com/system/resources/previews/044/311/465/non_2x/nba-basketball-team-logo-collection-nba-tournament-teams-emblems-rivne-ukraine-november-20-2023-free-vector.jpg"/>
+            <img src="https://static.vecteezy.com/system/resources/previews/044/311/465/non_2x/nba-basketball-team-logo-collection-nba-tournament-teams-emblems-rivne-ukraine-november-20-2023-free-vector.jpg" width="80%" height="15%"/>
         </div>
         <div id="simChoicePage" class="page">
             <h1 class="pageTitle">Choose Simulation Type</h1>
             <br/>
             <button id="simScore" onclick="simulateScore()">Score</button>
-            <button id="simGame" onclick="simulateGame()">Game</button>
+            <button id="simGame" onclick="simulateGame()">Game</button> 
         </div>
         <div id="simulateScorePage" class="page">
             <h1 class="pageTitle">Simulate Score</h1>
             <br/>
             <br/>
             <br/>
-            <select name="awayTeams" id="awayTeam" >
-                
-                <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+            <select name="Choose Away Team" id="awayTeams" class="selectBox">
+                <option value="invalid">Choose Away Team</option>
+                <option value="1">Atlanta Hawks</option>
+                <option value="2">Boston Celtics</option>
+                <option value="3">Brooklyn Nets</option>
+                <option value="4">Charlotte Hornets</option>
+                <option value="5">Chicago Bulls</option>
+                <option value="6">Cleveland Caviliers</option>
+                <option value="7">Dallas Mavericks</option>
+                <option value="8">Denver Nuggets</option>
+                <option value="9">Detroit Pistons</option>
+                <option value="10">Golden State Warriors</option>
+                <option value="11">Houston Rockets</option>
+                <option value="12">Indiana Pacers</option>
+                <option value="13">Los Angeles Clippers</option>
+                <option value="14">Los Angeles Lakers</option>
+                <option value="15">Memphis Grizzlies</option>
+                <option value="16">Miami Heat</option>
+                <option value="17">Milwaukee Bucks</option>
+                <option value="18">Minnesota Timberwolves</option>
+                <option value="19">New Orleans Pelicans</option>
+                <option value="20">New York Knicks</option>
+                <option value="21">Oklahoma City Thunder</option>
+                <option value="22">Orlando Magic</option>
+                <option value="23">Philadelphia 76ers</option>
+                <option value="24">Phoenix Suns</option>
+                <option value="25">Portland Trailblazers</option>
+                <option value="26">Sacramento Kings</option>
+                <option value="27">San Antonio Spurs</option>
+                <option value="28">Toronto Raptors</option>
+                <option value="29">Utah Jazz</option>
+                <option value="30">Washington Wizards</option>
             </select>
-            <label for="homeTeams">Choose Home Team</label>
-
+             at 
+            <select name="Choose Home Team" id="homeTeams" class="selectBox">
+                <option value="invalid">Choose Home Team</option>
+                <option value="1">Atlanta Hawks</option>
+                <option value="2">Boston Celtics</option>
+                <option value="3">Brooklyn Nets</option>
+                <option value="4">Charlotte Hornets</option>
+                <option value="5">Chicago Bulls</option>
+                <option value="6">Cleveland Caviliers</option>
+                <option value="7">Dallas Mavericks</option>
+                <option value="8">Denver Nuggets</option>
+                <option value="9">Detroit Pistons</option>
+                <option value="10">Golden State Warriors</option>
+                <option value="11">Houston Rockets</option>
+                <option value="12">Indiana Pacers</option>
+                <option value="13">Los Angeles Clippers</option>
+                <option value="14">Los Angeles Lakers</option>
+                <option value="15">Memphis Grizzlies</option>
+                <option value="16">Miami Heat</option>
+                <option value="17">Milwaukee Bucks</option>
+                <option value="18">Minnesota Timberwolves</option>
+                <option value="19">New Orleans Pelicans</option>
+                <option value="20">New York Knicks</option>
+                <option value="21">Oklahoma City Thunder</option>
+                <option value="22">Orlando Magic</option>
+                <option value="23">Philadelphia 76ers</option>
+                <option value="24">Phoenix Suns</option>
+                <option value="25">Portland Trailblazers</option>
+                <option value="26">Sacramento Kings</option>
+                <option value="27">San Antonio Spurs</option>
+                <option value="28">Toronto Raptors</option>
+                <option value="29">Utah Jazz</option>
+                <option value="30">Washington Wizards</option>
+            </select>
+            <button onclick="simulate()">Simulate</button>
         </div>
         <div id="standingsPage" class="page">
             <h1 class="pageTitle">Standings</h1>
@@ -212,6 +284,6 @@
                     <td></td></tr>
             </table>
         </div>
-        <script src="./script.js"></script>
+    <script src="./script.js"></script>
     </body> 
 </html>
