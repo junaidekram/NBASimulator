@@ -5,11 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <title>NBA Simulation Game</title>
         <link rel="stylesheet" href="./style.css">
-        <!-- Firebase SDKs -->
-        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     </head>
     <body> 
         <!--canvas id="myCanvas" width="200" height="100"></canvas-->
@@ -117,11 +112,9 @@
                 <option value="29">Utah Jazz</option>
                 <option value="30">Washington Wizards</option>
             </select>
+            <br/>
             <button onclick="simulate()">Simulate</button>
-            <br/>
-            <br/>
-            <br/>
-            <button onclick="saveUserData()"></button>
+            <button onclick="saveUserData()">Save Session</button>
         </div>
         <div id="standingsPage" class="page">
             <h1 class="pageTitle">Standings</h1>
@@ -292,6 +285,8 @@
                     <td></td>
                     <td></td></tr>
             </table>
+            <br/>
+            <button onclick="saveUserData">Save Session</button>
         </div>
     <script src="./script.js"></script>
     </body> 
