@@ -42,3 +42,17 @@ input {
 .selectBox {
     font-size: 20px
 }
+
+canvas {
+    background-color: rgb(207, 207, 207);
+}
+
+#errorMess {
+    color: red;
+    text-align: center;
+}
+
+.section {
+    width: 300px;
+    height: 100px;
+}

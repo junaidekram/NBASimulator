@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="./style.css">
     </head>
     <body> 
-        <!--canvas id="myCanvas" width="200" height="100"></canvas-->
+        <canvas id="canvas" width="900" height="700"></canvas>
         <div id="homePageContent" class="page">
             <h1 class="pageTitle">NBA Simulation</h1>
             <br/>
@@ -45,8 +45,8 @@
             <br/>
             <br/>
             <br/>
-            <select name="Choose Away Team" id="awayTeams" class="selectBox">
-                <option value="invalid">Choose Away Team</option>
+            <select name="Choose Away Team" id="awayTeam" class="selectBox">
+                <option value="invalid" selected>Choose Away Team</option>
                 <option value="1">Atlanta Hawks</option>
                 <option value="2">Boston Celtics</option>
                 <option value="3">Brooklyn Nets</option>
@@ -79,8 +79,8 @@
                 <option value="30">Washington Wizards</option>
             </select>
              at 
-            <select name="Choose Home Team" id="homeTeams" class="selectBox">
-                <option value="invalid">Choose Home Team</option>
+            <select name="Choose Home Team" id="homeTeam" class="selectBox">
+                <option value="invalid1" selected>Choose Home Team</option>
                 <option value="1">Atlanta Hawks</option>
                 <option value="2">Boston Celtics</option>
                 <option value="3">Brooklyn Nets</option>
@@ -113,8 +113,56 @@
                 <option value="30">Washington Wizards</option>
             </select>
             <br/>
+            <br/>
+            <div id="errorMess"></div>
+            <br/>
             <button onclick="simulate()">Simulate</button>
+            <br/>
+            <br/>
+            <br/>
+            <br/>
+            <br/>
+            <br/>
+            <br/>
             <button onclick="saveUserData()">Save Session</button>
+            <button onclick="resetUser()">Reset User</button>
+        </div>
+        <div id="finalScore" class="page">
+            <h1 class="pageTitle">Results</h1>
+            <br/>
+            <br/>
+            <br/>
+            <section style="float: left" class="section" id="awayScore">
+                <h3 style="font-size: 27px">Indiana Pacers</h3>
+                <br/>
+                <img src="https://s.yimg.com/cv/apiv2/default/nba/20181214/500x500/pacers_wbg.png" height="75">
+                <h3 style="font-size: 75px; display: inline-block">120</h3>
+                <br/>
+                <div id="awayTeamRecord"></div>
+            </section>
+            <section style="float:left" class="section">
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <h3 style="font-size: 50px" id="result">Final ></h3>
+            </section>
+            <section style="float: right" class="section" id="homeScore">
+                <h3 style="font-size: 27px">Indiana Pacers</h3>
+                <br/>
+                <h3 style="font-size: 75px; display: inline-block">122</h3>
+                <img src="https://s.yimg.com/cv/apiv2/default/nba/20181214/500x500/pacers_wbg.png" height="75">
+                <br/>
+                <div id="homeTeamRecord"></div>
+            </section>
+        </div>
+        <div id="simButton">
+            <button onclick="simChoicePage()" style="font-size: 20px;">Simulate Again</button>
+            <button id="standings" onclick="standings()" style="font-size: 20px;">Standings</button>
+            <br/>
+            <br/>
+            <button onclick="saveUserData()" style="font-size: 20px;">Save Session</button>
+            <button onclick="resetUser()" style="font-size: 20px;">Reset User</button>
         </div>
         <div id="standingsPage" class="page">
             <h1 class="pageTitle">Standings</h1>
