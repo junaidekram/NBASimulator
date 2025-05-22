@@ -176,20 +176,20 @@ function simFinalScore() {
   const awayRating = parseFloat(allTeams[awayTeamIndex + 1][5]);
 
   // Calculate score differential
-  scoreDiff = Math.abs(homeRating - awayRating);
+  scoreDiff = Math.abs(homeRating - awayRating) / 1.75;
   scoreDiff = Math.ceil(scoreDiff * ((Math.random() * 1.2) + 0.4));
 
   if ((Math.random() * 2.1) <= 1) {
-    awayScore = Math.ceil((Math.random() * 30) + 80);
+    awayScore = Math.ceil((Math.random() * 30) + 87);
     homeScore = awayScore + scoreDiff;
   } else {
-    homeScore = Math.ceil((Math.random() * 30) + 80);
+    homeScore = Math.ceil((Math.random() * 30) + 87);
     awayScore = homeScore + scoreDiff;
   }
 
   // Adjust scores based on rating bonuses and random factors
-  awayScore += (awayRating / 2);
-  homeScore += (homeRating / 2);
+  awayScore += (awayRating / 4);
+  homeScore += (homeRating / 4);
 
   awayScore *= parseFloat(allTeams[awayTeamIndex + 1][3]);
   awayScore *= parseFloat(allTeams[homeTeamIndex + 1][4]);
@@ -197,8 +197,8 @@ function simFinalScore() {
   homeScore *= parseFloat(allTeams[awayTeamIndex + 1][4]);
   homeScore *= parseFloat(allTeams[homeTeamIndex + 1][3]);
 
-  homeScore *= ((Math.random() * 0.1) + 0.95);
-  awayScore *= ((Math.random() * 0.1) + 0.95);
+  homeScore *= ((Math.random() * 0.15) + 0.95);
+  awayScore *= ((Math.random() * 0.15) + 0.95);
 
   homeScore = Math.ceil(homeScore);
   awayScore = Math.floor(awayScore);
@@ -209,7 +209,7 @@ function simFinalScore() {
 
   // Update record
   const homeTeamData = allTeams[homeTeamIndex + 1];
-  const awayTeamData = allTeams[awayTeamIndex + 1];
+  const awayTeamData = allTeams[awayTeamIndex + 1]; 
 
   if (homeScore > awayScore) {
     winnerArrow.innerText = "Final >";
@@ -255,7 +255,7 @@ function determineTeamStrength() {
 
     const normalized = (strength + 7.5) / 15;
 
-    const offense = 0.8 + Math.random() * 0.35 * (0.5 + normalized / 2);
+    const offense = 0.85 + Math.random() * 0.35 * (0.5 + normalized / 2);
 
     const defense = 1.15 - Math.random() * 0.35 * (0.5 + normalized / 2);
 
