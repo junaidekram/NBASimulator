@@ -17,7 +17,7 @@ startPage.hidden = true;
 simTypePage.hidden = true;
 simScorePage.hidden = true;
 standingsPage.hidden = true;
-loginPage.hidden = true; 
+loginPage.hidden = true;  
 canvas.hidden = true;
 simButton.hidden = true;
 resultsPage.hidden = true;
@@ -58,7 +58,7 @@ defaultAllTeams = [
     "New York Knicks", ["0", "0", ".000", "0", "0", "0"],
     "Oklahoma City Thunder", ["0", "0", ".000", "0", "0", "0"],
     "Orlando Magic", ["0", "0", ".000", "0", "0", "0"],
-    "Philadelphia 76ers", ["0", "0", ".000", "0", "0", "0"],
+    "Philadelphia 76ers", ["0", "0", ".000", "0", "0", "0"], 
     "Phoenix Suns", ["0", "0", ".000", "0", "0", "0"],
     "Portland Trailblazers", ["0", "0", ".000", "0", "0", "0"],
     "Sacramento Kings", ["0", "0", ".000", "0", "0", "0"],
@@ -76,11 +76,9 @@ function simChoicePage () {
     simTypePage.hidden = false;
     canvas.hidden = true;
     simButton.hidden = true;
+    standingsPage.hidden = true;
 }
 
-var animationValue = 5;
-var homeValue = 0;
-var awayValue = 0;
 
 const teamColor = [
   '#E03A3E', // Atlanta Hawks
@@ -197,8 +195,8 @@ function simFinalScore() {
   homeScore *= parseFloat(allTeams[awayTeamIndex + 1][4]);
   homeScore *= parseFloat(allTeams[homeTeamIndex + 1][3]);
 
-  homeScore *= ((Math.random() * 0.15) + 0.95);
-  awayScore *= ((Math.random() * 0.15) + 0.95);
+  homeScore *= ((Math.random() * 0.2) + 0.9);
+  awayScore *= ((Math.random() * 0.2) + 0.9);
 
   homeScore = Math.ceil(homeScore);
   awayScore = Math.floor(awayScore);
@@ -351,6 +349,10 @@ function flashTeamImage() {
   }
 }
 
+var homeValue = 0;
+var awayValue = 0;
+var animationValue = 5;
+
 function drawSimAnimation() {
     const getHomeTeam = document.getElementById("homeTeam");
     const getAwayTeam = document.getElementById("awayTeam");
@@ -396,11 +398,57 @@ function simulateScore() {
 }
 
 function standings() {
-    
+  standingsPage.hidden = false;
+  resultsPage.hidden = true;
+  startPage.hidden = true;
+  simButton.hidden = false;
+  const standingsBody = document.getElementById("standingsBody");
+  standingsBody.innerHTML = "";
+
+  const standings = [];
+
+  for (let i = 0; i < allTeams.length; i += 2) {
+    const teamName = allTeams[i];
+    const stats = allTeams[i + 1];
+
+    standings.push({
+      name: teamName,
+      wins: stats[0],
+      losses: stats[1],
+      winPct: parseFloat(stats[2]),
+      offense: parseFloat(stats[3]),
+      defense: parseFloat(stats[4]),
+      overall: parseFloat(stats[5])
+    });
+  }
+
+  standings.sort((a, b) => b.winPct - a.winPct);
+
+  for (const team of standings) {
+    const row = document.createElement("tr");
+
+    const cells = [
+      team.name,
+      team.wins,
+      team.losses,
+      team.winPct.toFixed(3),
+      team.offense.toFixed(2),
+      team.defense.toFixed(2),
+      team.overall.toFixed(2)
+    ];
+
+    for (const value of cells) {
+      const td = document.createElement("td");
+      td.textContent = value;
+      row.appendChild(td);
+    }
+
+    standingsBody.appendChild(row);
+  }
 }
 
 
-const errorMess = document.getElementById("errorMess");
+const errorMess = document.getElementById("errorMess"); 
 
 
 function simulate() {
