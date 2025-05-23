@@ -186,95 +186,98 @@ function simFinalScore() {
   const homeScoreSection = document.getElementById("homeScore");
   const awayScoreSection = document.getElementById("awayScore");
 
+  let awayScore;
+  let homeScore;
+
   canvas.hidden = true;
   resultsPage.hidden = false;
 
+  // Set team names and images
   document.querySelector("#awayScore h3").textContent = allTeams[awayTeamIndex];
   document.querySelector("#homeScore h3").textContent = allTeams[homeTeamIndex];
+
   document.querySelector("#homeScore img").src = teamImage[homeTeamIndex / 2];
   document.querySelector("#awayScore img").src = teamImage[awayTeamIndex / 2];
 
-  const homeStats = allTeams[homeTeamIndex + 1];
-  const awayStats = allTeams[awayTeamIndex + 1];
+  // Ratings
+  const homeStrength = parseFloat(allTeams[homeTeamIndex + 1][5]);
+  const awayStrength = parseFloat(allTeams[awayTeamIndex + 1][5]);
 
-  const homeStrength = parseFloat(homeStats[5]);
-  const awayStrength = parseFloat(awayStats[5]);
+  // Generate base score in NBA range
+  homeScore = Math.random() * 30 + 87;
+  awayScore = Math.random() * 30 + 87;
 
-  const homeOffense = parseFloat(homeStats[3]);
-  const homeDefense = parseFloat(homeStats[4]);
-  const awayOffense = parseFloat(awayStats[3]);
-  const awayDefense = parseFloat(awayStats[4]);
-
-  const baseScore = 108;
-
-  // Compute raw scores with randomness
-  let homeScore = baseScore * homeOffense * awayDefense + (Math.random() - 0.5) * 10;
-  let awayScore = baseScore * awayOffense * homeDefense + (Math.random() - 0.5) * 10;
-
-  // Strength differential, capped influence
+  // Add strength-based differential (but clamp it to avoid blowouts)
   const strengthGap = homeStrength - awayStrength;
-  const clampedStrengthImpact = Math.max(Math.min(strengthGap, 2.5), -2.5); // VERY limited sway
+  const clampedStrengthImpact = Math.max(Math.min(strengthGap, 2.5), -2.5);
 
-  homeScore += clampedStrengthImpact * 2; // max ±5 pts
-  awayScore -= clampedStrengthImpact * 2;
+  homeScore += clampedStrengthImpact * 1.5;
+  awayScore -= clampedStrengthImpact * 1.5;
 
-  // Simulate upsets by giving worse teams some randomness boost
-  const underdogFactor = Math.abs(strengthGap);
-  if (strengthGap > 0) { // home is stronger
-    awayScore += (Math.random() * underdogFactor * 1.25);
-    homeScore -= (Math.random() * underdogFactor * 0.5); // stronger team might coast
-  } else {
-    homeScore += (Math.random() * underdogFactor * 1.25);
-    awayScore -= (Math.random() * underdogFactor * 0.5);
+  // Add base rating boost
+  awayScore += (awayStrength / 4);
+  homeScore += (homeStrength / 4);
+
+  // Modify based on team offense/defense stats
+  awayScore *= parseFloat(allTeams[awayTeamIndex + 1][3]); // offense
+  awayScore *= parseFloat(allTeams[homeTeamIndex + 1][4]); // home defense
+
+  homeScore *= parseFloat(allTeams[awayTeamIndex + 1][4]); // away defense
+  homeScore *= parseFloat(allTeams[homeTeamIndex + 1][3]); // home offense
+
+  // Underdog performance logic
+  const upsetSwing = Math.random();
+  const upsetBias = Math.abs(strengthGap) / 4;
+
+  if (strengthGap > 0) {
+    // Home is better team
+    awayScore += upsetBias * (upsetSwing * 14);
+    homeScore -= upsetBias * (Math.random() * 5);
+  } else if (strengthGap < 0) {
+    // Away is better team
+    homeScore += upsetBias * (upsetSwing * 14);
+    awayScore -= upsetBias * (Math.random() * 5);
   }
 
-  // Clamp score difference to NBA realism
-  let rawDiff = Math.abs(homeScore - awayScore);
-  if (rawDiff > 12) {
-    const reduce = (rawDiff - 12) * 0.7 + Math.random() * 2;
-    if (homeScore > awayScore) homeScore -= reduce;
-    else awayScore -= reduce;
-  }
+  // Add normal game randomness
+  homeScore *= ((Math.random() * 0.2) + 0.9);
+  awayScore *= ((Math.random() * 0.2) + 0.9);
 
-  // Final polish randomness (like clutch buckets or garbage time)
-  homeScore += (Math.random() - 0.5) * 4;
-  awayScore += (Math.random() - 0.5) * 4;
+  homeScore = Math.ceil(homeScore);
+  awayScore = Math.floor(awayScore);
 
-  // Final rounding & clamping
-  homeScore = Math.round(Math.max(95, Math.min(130, homeScore)));
-  awayScore = Math.round(Math.max(95, Math.min(130, awayScore)));
-
-  // DOM Updates
+  // Update scores in DOM
   awayScoreSection.querySelectorAll("h3")[1].textContent = awayScore;
   homeScoreSection.querySelectorAll("h3")[1].textContent = homeScore;
 
-  const homeWins = parseInt(homeStats[0]);
-  const homeLosses = parseInt(homeStats[1]);
-  const awayWins = parseInt(awayStats[0]);
-  const awayLosses = parseInt(awayStats[1]);
+  // Update record
+  const homeTeamData = allTeams[homeTeamIndex + 1];
+  const awayTeamData = allTeams[awayTeamIndex + 1];
 
   if (homeScore > awayScore) {
     winnerArrow.innerText = "Final >";
-    homeStats[0] = (homeWins + 1).toString();
-    awayStats[1] = (awayLosses + 1).toString();
+    homeTeamData[0] = (parseInt(homeTeamData[0]) + 1).toString(); // win
+    awayTeamData[1] = (parseInt(awayTeamData[1]) + 1).toString(); // loss
   } else {
     winnerArrow.innerText = "< Final";
-    awayStats[0] = (awayWins + 1).toString();
-    homeStats[1] = (homeLosses + 1).toString();
+    awayTeamData[0] = (parseInt(awayTeamData[0]) + 1).toString(); // win
+    homeTeamData[1] = (parseInt(homeTeamData[1]) + 1).toString(); // loss
   }
 
   // Update win %
-  const newHomeWins = parseInt(homeStats[0]);
-  const newHomeLosses = parseInt(homeStats[1]);
-  const newAwayWins = parseInt(awayStats[0]);
-  const newAwayLosses = parseInt(awayStats[1]);
+  const homeWins = parseInt(homeTeamData[0]);
+  const homeLosses = parseInt(homeTeamData[1]);
+  const awayWins = parseInt(awayTeamData[0]);
+  const awayLosses = parseInt(awayTeamData[1]);
 
-  homeStats[2] = (newHomeWins / (newHomeWins + newHomeLosses)).toFixed(3);
-  awayStats[2] = (newAwayWins / (newAwayWins + newAwayLosses)).toFixed(3);
+  homeTeamData[2] = (homeWins / (homeWins + homeLosses)).toFixed(3);
+  awayTeamData[2] = (awayWins / (awayWins + awayLosses)).toFixed(3);
 
-  document.getElementById("homeTeamRecord").innerText = `Record: ${homeStats[0]}-${homeStats[1]} (${homeStats[2]})`;
-  document.getElementById("awayTeamRecord").innerText = `Record: ${awayStats[0]}-${awayStats[1]} (${awayStats[2]})`;
+  // Display updated record
+  document.getElementById("homeTeamRecord").innerText = `Record: ${homeTeamData[0]}-${homeTeamData[1]} (${homeTeamData[2]})`;
+  document.getElementById("awayTeamRecord").innerText = `Record: ${awayTeamData[0]}-${awayTeamData[1]} (${awayTeamData[2]})`;
 }
+
 
 
 
