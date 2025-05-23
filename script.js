@@ -146,6 +146,37 @@ const teamImage = [
   "https://a.espncdn.com/guid/64d73af6-b8ec-e213-87e8-a4eab3a692e7/logos/primary_logo_on_black_color.png",
 ];
 
+function determineTeamStrength() {
+  const values = [];
+  for (let i = -15; i <= 15; i++) {
+    if (i !== 0) values.push(i / 2); // range: -7.5 to +7.5
+  }
+
+  // Shuffle values to assign random team strengths
+  for (let i = values.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [values[i], values[j]] = [values[j], values[i]];
+  }
+
+  // Assign team strength and calculate offense/defense multipliers
+  for (let i = 0; i < allTeams.length; i += 2) {
+    const stats = allTeams[i + 1];
+    const strength = values[i / 2];
+    stats[5] = strength;
+
+    const normalized = (strength + 7.5) / 15; // maps to 0–1
+
+    // Offense: ranges roughly from 0.95 to 1.15
+    const offense = 1.0 + (Math.random() * 0.1 - 0.05) + (normalized - 0.5) * 0.2;
+
+    // Defense: ranges from 0.95 to 1.15 inversely
+    const defense = 1.0 - (Math.random() * 0.1 - 0.05) - (normalized - 0.5) * 0.2;
+
+    stats[3] = parseFloat(offense.toFixed(3));
+    stats[4] = parseFloat(defense.toFixed(3));
+  }
+}
+
 function simFinalScore() {
   const getHomeTeam = document.getElementById("homeTeam");
   const getAwayTeam = document.getElementById("awayTeam");
@@ -155,115 +186,97 @@ function simFinalScore() {
   const homeScoreSection = document.getElementById("homeScore");
   const awayScoreSection = document.getElementById("awayScore");
 
-  let awayScore;
-  let homeScore;
-  let scoreDiff;
-
   canvas.hidden = true;
   resultsPage.hidden = false;
 
-  // Set team names and images
   document.querySelector("#awayScore h3").textContent = allTeams[awayTeamIndex];
   document.querySelector("#homeScore h3").textContent = allTeams[homeTeamIndex];
-
   document.querySelector("#homeScore img").src = teamImage[homeTeamIndex / 2];
   document.querySelector("#awayScore img").src = teamImage[awayTeamIndex / 2];
 
-  // Ratings
-  const homeRating = parseFloat(allTeams[homeTeamIndex + 1][5]);
-  const awayRating = parseFloat(allTeams[awayTeamIndex + 1][5]);
+  const homeStats = allTeams[homeTeamIndex + 1];
+  const awayStats = allTeams[awayTeamIndex + 1];
 
-  // Calculate score differential
-  scoreDiff = Math.abs(homeRating - awayRating) / 1.75;
-  scoreDiff = Math.ceil(scoreDiff * ((Math.random() * 1.2) + 0.4));
+  const homeStrength = parseFloat(homeStats[5]);
+  const awayStrength = parseFloat(awayStats[5]);
 
-  if ((Math.random() * 2.1) <= 1) {
-    awayScore = Math.ceil((Math.random() * 30) + 87);
-    homeScore = awayScore + scoreDiff;
+  const homeOffense = parseFloat(homeStats[3]);
+  const homeDefense = parseFloat(homeStats[4]);
+  const awayOffense = parseFloat(awayStats[3]);
+  const awayDefense = parseFloat(awayStats[4]);
+
+  const baseScore = 108;
+
+  // Compute raw scores with randomness
+  let homeScore = baseScore * homeOffense * awayDefense + (Math.random() - 0.5) * 10;
+  let awayScore = baseScore * awayOffense * homeDefense + (Math.random() - 0.5) * 10;
+
+  // Strength differential, capped influence
+  const strengthGap = homeStrength - awayStrength;
+  const clampedStrengthImpact = Math.max(Math.min(strengthGap, 2.5), -2.5); // VERY limited sway
+
+  homeScore += clampedStrengthImpact * 2; // max ±5 pts
+  awayScore -= clampedStrengthImpact * 2;
+
+  // Simulate upsets by giving worse teams some randomness boost
+  const underdogFactor = Math.abs(strengthGap);
+  if (strengthGap > 0) { // home is stronger
+    awayScore += (Math.random() * underdogFactor * 1.25);
+    homeScore -= (Math.random() * underdogFactor * 0.5); // stronger team might coast
   } else {
-    homeScore = Math.ceil((Math.random() * 30) + 87);
-    awayScore = homeScore + scoreDiff;
+    homeScore += (Math.random() * underdogFactor * 1.25);
+    awayScore -= (Math.random() * underdogFactor * 0.5);
   }
 
-  // Adjust scores based on rating bonuses and random factors
-  awayScore += (awayRating / 4);
-  homeScore += (homeRating / 4);
+  // Clamp score difference to NBA realism
+  let rawDiff = Math.abs(homeScore - awayScore);
+  if (rawDiff > 12) {
+    const reduce = (rawDiff - 12) * 0.7 + Math.random() * 2;
+    if (homeScore > awayScore) homeScore -= reduce;
+    else awayScore -= reduce;
+  }
 
-  awayScore *= parseFloat(allTeams[awayTeamIndex + 1][3]);
-  awayScore *= parseFloat(allTeams[homeTeamIndex + 1][4]);
+  // Final polish randomness (like clutch buckets or garbage time)
+  homeScore += (Math.random() - 0.5) * 4;
+  awayScore += (Math.random() - 0.5) * 4;
 
-  homeScore *= parseFloat(allTeams[awayTeamIndex + 1][4]);
-  homeScore *= parseFloat(allTeams[homeTeamIndex + 1][3]);
+  // Final rounding & clamping
+  homeScore = Math.round(Math.max(95, Math.min(130, homeScore)));
+  awayScore = Math.round(Math.max(95, Math.min(130, awayScore)));
 
-  homeScore *= ((Math.random() * 0.2) + 0.9);
-  awayScore *= ((Math.random() * 0.2) + 0.9);
-
-  homeScore = Math.ceil(homeScore);
-  awayScore = Math.floor(awayScore);
-
-  // Update scores in DOM
+  // DOM Updates
   awayScoreSection.querySelectorAll("h3")[1].textContent = awayScore;
   homeScoreSection.querySelectorAll("h3")[1].textContent = homeScore;
 
-  // Update record
-  const homeTeamData = allTeams[homeTeamIndex + 1];
-  const awayTeamData = allTeams[awayTeamIndex + 1]; 
+  const homeWins = parseInt(homeStats[0]);
+  const homeLosses = parseInt(homeStats[1]);
+  const awayWins = parseInt(awayStats[0]);
+  const awayLosses = parseInt(awayStats[1]);
 
   if (homeScore > awayScore) {
     winnerArrow.innerText = "Final >";
-    homeTeamData[0] = (parseInt(homeTeamData[0]) + 1).toString(); // win
-    awayTeamData[1] = (parseInt(awayTeamData[1]) + 1).toString(); // loss
+    homeStats[0] = (homeWins + 1).toString();
+    awayStats[1] = (awayLosses + 1).toString();
   } else {
     winnerArrow.innerText = "< Final";
-    awayTeamData[0] = (parseInt(awayTeamData[0]) + 1).toString();
-    homeTeamData[1] = (parseInt(homeTeamData[1]) + 1).toString();
+    awayStats[0] = (awayWins + 1).toString();
+    homeStats[1] = (homeLosses + 1).toString();
   }
 
   // Update win %
-  const homeWins = parseInt(homeTeamData[0]);
-  const homeLosses = parseInt(homeTeamData[1]);
-  const awayWins = parseInt(awayTeamData[0]);
-  const awayLosses = parseInt(awayTeamData[1]);
+  const newHomeWins = parseInt(homeStats[0]);
+  const newHomeLosses = parseInt(homeStats[1]);
+  const newAwayWins = parseInt(awayStats[0]);
+  const newAwayLosses = parseInt(awayStats[1]);
 
-  homeTeamData[2] = (homeWins / (homeWins + homeLosses)).toFixed(3);
-  awayTeamData[2] = (awayWins / (awayWins + awayLosses)).toFixed(3);
+  homeStats[2] = (newHomeWins / (newHomeWins + newHomeLosses)).toFixed(3);
+  awayStats[2] = (newAwayWins / (newAwayWins + newAwayLosses)).toFixed(3);
 
-  // Display updated record
-  document.getElementById("homeTeamRecord").innerText = `Record: ${homeTeamData[0]}-${homeTeamData[1]} (${homeTeamData[2]})`;
-  document.getElementById("awayTeamRecord").innerText = `Record: ${awayTeamData[0]}-${awayTeamData[1]} (${awayTeamData[2]})`;
+  document.getElementById("homeTeamRecord").innerText = `Record: ${homeStats[0]}-${homeStats[1]} (${homeStats[2]})`;
+  document.getElementById("awayTeamRecord").innerText = `Record: ${awayStats[0]}-${awayStats[1]} (${awayStats[2]})`;
 }
 
-function determineTeamStrength() { 
-  const values = [];
-  for (let i = -15; i <= 15; i++) {
-    if (i !== 0) values.push(i / 2);
-  }
 
-  for (let i = values.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [values[i], values[j]] = [values[j], values[i]]; 
-  }
-
-  for (let i = 0; i < allTeams.length; i += 2) {
-    allTeams[i + 1][5] = values[i / 2];
-  }
-  for (let i = 0; i < allTeams.length; i += 2) { 
-    const stats = allTeams[i + 1];
-    const strength = stats[5]; 
-
-    const normalized = (strength + 7.5) / 15;
-
-    const offense = 0.85 + Math.random() * 0.35 * (0.5 + normalized / 2);
-
-    const defense = 1.15 - Math.random() * 0.35 * (0.5 + normalized / 2);
-
-    stats[3] = parseFloat(offense.toFixed(3));
-    stats[4] = parseFloat(defense.toFixed(5));
-
-    console.log(allTeams);
-  }
-
-}
 
 let screenClear = 10;
 
