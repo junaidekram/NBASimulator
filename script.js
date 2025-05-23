@@ -203,48 +203,64 @@ function simFinalScore() {
   const homeStrength = parseFloat(allTeams[homeTeamIndex + 1][5]);
   const awayStrength = parseFloat(allTeams[awayTeamIndex + 1][5]);
 
-  // Generate base score in NBA range
+  // Base NBA score
   homeScore = Math.random() * 30 + 87;
   awayScore = Math.random() * 30 + 87;
 
-  // Add strength-based differential (but clamp it to avoid blowouts)
+  // Strength impact (clamped to avoid extremes)
   const strengthGap = homeStrength - awayStrength;
-  const clampedStrengthImpact = Math.max(Math.min(strengthGap, 2.5), -2.5);
+  const clampedImpact = Math.max(Math.min(strengthGap, 2.5), -2.5);
+  homeScore += clampedImpact * 1.5;
+  awayScore -= clampedImpact * 1.5;
 
-  homeScore += clampedStrengthImpact * 1.5;
-  awayScore -= clampedStrengthImpact * 1.5;
+  // Add base rating bonuses
+  homeScore += homeStrength / 4;
+  awayScore += awayStrength / 4;
 
-  // Add base rating boost
-  awayScore += (awayStrength / 4);
-  homeScore += (homeStrength / 4);
+  // Adjust based on offense/defense stats
+  homeScore *= parseFloat(allTeams[homeTeamIndex + 1][3]); // home offense
+  homeScore *= parseFloat(allTeams[awayTeamIndex + 1][4]); // away defense
 
-  // Modify based on team offense/defense stats
-  awayScore *= parseFloat(allTeams[awayTeamIndex + 1][3]); // offense
+  awayScore *= parseFloat(allTeams[awayTeamIndex + 1][3]); // away offense
   awayScore *= parseFloat(allTeams[homeTeamIndex + 1][4]); // home defense
 
-  homeScore *= parseFloat(allTeams[awayTeamIndex + 1][4]); // away defense
-  homeScore *= parseFloat(allTeams[homeTeamIndex + 1][3]); // home offense
-
-  // Underdog performance logic
+  // Underdog performance boost
   const upsetSwing = Math.random();
   const upsetBias = Math.abs(strengthGap) / 4;
 
   if (strengthGap > 0) {
-    // Home is better team
+    // Home is better
     awayScore += upsetBias * (upsetSwing * 14);
     homeScore -= upsetBias * (Math.random() * 5);
   } else if (strengthGap < 0) {
-    // Away is better team
+    // Away is better
     homeScore += upsetBias * (upsetSwing * 14);
     awayScore -= upsetBias * (Math.random() * 5);
   }
 
-  // Add normal game randomness
+  // Final game randomness
   homeScore *= ((Math.random() * 0.2) + 0.9);
   awayScore *= ((Math.random() * 0.2) + 0.9);
 
   homeScore = Math.ceil(homeScore);
   awayScore = Math.floor(awayScore);
+
+  // 🛠️ Blowout Compression: scale down score difference if it's a big gap
+  let scoreDiff = Math.abs(homeScore - awayScore);
+  if (scoreDiff >= 15) {
+    const winner = homeScore > awayScore ? 'home' : 'away';
+    const targetDiff = Math.floor(6 + Math.random() * 8); // target: 6–13 pt win
+
+    if (winner === 'home') {
+      awayScore = homeScore - targetDiff;
+    } else {
+      homeScore = awayScore - targetDiff;
+    }
+
+    // Ensure floor of 85 for realism
+    if (homeScore < 85) homeScore = 85 + Math.floor(Math.random() * 5);
+    if (awayScore < 85) awayScore = 85 + Math.floor(Math.random() * 5);
+  }
 
   // Update scores in DOM
   awayScoreSection.querySelectorAll("h3")[1].textContent = awayScore;
@@ -277,6 +293,7 @@ function simFinalScore() {
   document.getElementById("homeTeamRecord").innerText = `Record: ${homeTeamData[0]}-${homeTeamData[1]} (${homeTeamData[2]})`;
   document.getElementById("awayTeamRecord").innerText = `Record: ${awayTeamData[0]}-${awayTeamData[1]} (${awayTeamData[2]})`;
 }
+
 
 
 
