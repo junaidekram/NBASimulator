@@ -458,18 +458,25 @@ function standings() {
   resultsPage.hidden = true;
   startPage.hidden = true;
   simButton.hidden = false;
-  
-  const standingsBody = document.getElementById("standingsBody");
-  standingsBody.innerHTML = "";
 
-  const standings = [];
+  // Clear the standings container
+  standingsPage.innerHTML = "<h1 class='pageTitle'>Standings</h1>";
+
+  // Create EAST and WEST team arrays
+  const eastTeams = [
+    "Atlanta Hawks", "Boston Celtics", "Brooklyn Nets", "Charlotte Hornets", "Chicago Bulls",
+    "Cleveland Caviliers", "Detroit Pistons", "Indiana Pacers", "Miami Heat", "Milwaukee Bucks",
+    "New York Knicks", "Orlando Magic", "Philadelphia 76ers", "Toronto Raptors", "Washington Wizards"
+  ];
+
+  const eastStandings = [];
+  const westStandings = [];
 
   for (let i = 0; i < allTeams.length; i += 2) {
-    const teamName = allTeams[i];
+    const name = allTeams[i];
     const stats = allTeams[i + 1];
-
-    standings.push({
-      name: teamName,
+    const obj = {
+      name,
       wins: stats[0],
       losses: stats[1],
       winPct: parseFloat(stats[2]),
@@ -477,43 +484,74 @@ function standings() {
       defense: parseFloat(stats[4]),
       overall: parseFloat(stats[5]),
       logo: teamImage[i / 2]
-    });
+    };
+    if (eastTeams.includes(name)) {
+      eastStandings.push(obj);
+    } else {
+      westStandings.push(obj);
+    }
   }
 
-  standings.sort((a, b) => b.winPct - a.winPct);
+  eastStandings.sort((a, b) => b.winPct - a.winPct);
+  westStandings.sort((a, b) => b.winPct - a.winPct);
+
+  // Build and append both tables
+  standingsPage.appendChild(buildStandingsTable("Eastern Conference", eastStandings));
+  standingsPage.appendChild(buildStandingsTable("Western Conference", westStandings));
+}
+
+// Helper function to build table
+function buildStandingsTable(title, standings) {
+  const container = document.createElement("div");
+
+  const heading = document.createElement("h2");
+  heading.textContent = title;
+  heading.style.textAlign = "center";
+  container.appendChild(heading);
+
+  const table = document.createElement("table");
+  table.style.margin = "0 auto"; // ✅ Center the table
+  table.style.borderCollapse = "collapse";
+  table.style.marginBottom = "24px";
+
+  const thead = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  const headers = ["Rank", "Team", "Wins |", "Losses |", "Win % |", "Offense |", "Defense |", "Overall |"];
+  for (const h of headers) {
+    const th = document.createElement("th");
+    th.textContent = h;
+    headerRow.appendChild(th);
+  }
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
 
   for (let i = 0; i < standings.length; i++) {
     const team = standings[i];
     const row = document.createElement("tr");
 
-    // Determine if special border is needed
-    const isDashedBorder = i === 6;
-    const isSolidBorder = i === 10;
-
-    // Rank
     const rankTd = document.createElement("td");
     rankTd.textContent = i + 1;
 
-    // Team + Logo
     const teamTd = document.createElement("td");
     teamTd.style.display = "flex";
     teamTd.style.alignItems = "center";
     teamTd.style.gap = "8px";
 
-    const logoImg = document.createElement("img");
-    logoImg.src = team.logo;
-    logoImg.alt = `${team.name} logo`;
-    logoImg.style.width = "30px";
-    logoImg.style.height = "30px";
-    logoImg.style.objectFit = "contain";
+    const logo = document.createElement("img");
+    logo.src = team.logo;
+    logo.style.width = "30px";
+    logo.style.height = "30px";
+    logo.style.objectFit = "contain";
 
-    const teamNameSpan = document.createElement("span");
-    teamNameSpan.textContent = team.name;
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = team.name;
 
-    teamTd.appendChild(logoImg);
-    teamTd.appendChild(teamNameSpan);
+    teamTd.appendChild(logo);
+    teamTd.appendChild(nameSpan);
 
-    const dataCells = [
+    const data = [
       rankTd,
       teamTd,
       createCell(team.wins),
@@ -524,29 +562,28 @@ function standings() {
       createCell(team.overall.toFixed(2))
     ];
 
-    for (const cell of dataCells) {
-      cell.style.textAlign = "left";
+    for (const cell of data) {
       cell.style.padding = "8px 12px";
       cell.style.borderBottom = "1px solid #ccc";
-
-      if (isDashedBorder) {
-        cell.style.borderTop = "3px dashed black";
-      } else if (isSolidBorder) {
-        cell.style.borderTop = "3px solid black";
-      }
-
       row.appendChild(cell);
     }
 
-    standingsBody.appendChild(row);
+    tbody.appendChild(row);
   }
 
-  function createCell(text) {
-    const td = document.createElement("td");
-    td.textContent = text;
-    return td;
-  }
+  table.appendChild(tbody);
+  container.appendChild(table);
+  return container;
 }
+
+function createCell(text) {
+  const td = document.createElement("td");
+  td.textContent = text;
+  return td;
+}
+
+
+
 
 
 

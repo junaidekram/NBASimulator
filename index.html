@@ -116,6 +116,7 @@
             <br/>
             <div id="errorMess"></div>
             <br/>
+            <button onclick="standings()" style="font-size: 20px;">Check Standings</button>
             <button onclick="simulate()">Simulate</button>
             <br/>
             <br/>
@@ -124,8 +125,8 @@
             <br/>
             <br/>
             <br/>
-            <button onclick="saveUserData()">Save Session</button>
-            <button onclick="resetUser()">Reset User</button>
+            <button onclick="saveUserData()" style="font-size: 20px;">Save Session</button>
+            <button onclick="resetUser()" style="font-size: 20px;">Reset User</button>
         </div>
         <div id="finalScore" class="page">
             <h1 class="pageTitle">Results</h1>
@@ -158,26 +159,14 @@
         </div>
         <div id="standingsPage">
             <h1 class="pageTitle">Standings</h1>
-            <table id="standingsTable">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Team</th>
-                        <th>Wins |</th>
-                        <th> Losses |</th>
-                        <th> Win % |</th>
-                        <th> Offense |</th>
-                        <th> Defense |</th>
-                        <th> Overall |</th>
-                    </tr>
-                </thead>
-                <tbody id="standingsBody">
-                </tbody>
-            </table>
+            <div id="standingsContainer" style="display:flex; flex-wrap:wrap; gap:20px;">
+                <div id="eastStandings"></div>
+                <div id="westStandings"></div>
+            </div>
         </div>
         <div id="simButton">
             <button onclick="simChoicePage()" style="font-size: 20px;">Simulate</button>
-            <button id="standings" onclick="standings()" style="font-size: 20px;">Standings</button>
+            <button onclick="standings()" style="font-size: 20px;">Standings</button>
             <br/>
             <br/>
             <button onclick="saveUserData()" style="font-size: 20px;">Save Session</button>
