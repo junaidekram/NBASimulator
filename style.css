@@ -56,3 +56,26 @@ canvas {
     width: 300px;
     height: 100px;
 }
+
+#standingsTable td {
+  text-align: left;
+  padding: 8px 12px;
+}
+
+#standingsTable tr {
+  border-bottom: 1px solid #5d5d5d;
+}
+
+#standingsTable img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+#standingsPage {
+    text-align: center;
+    width: 900px;
+    height: 2000px; 
+    background-color: rgb(217, 213, 213);
+}

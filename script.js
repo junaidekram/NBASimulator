@@ -245,11 +245,11 @@ function simFinalScore() {
   homeScore = Math.ceil(homeScore);
   awayScore = Math.floor(awayScore);
 
-  // 🛠️ Blowout Compression: scale down score difference if it's a big gap
+  // 🛠️ Blowout Compression
   let scoreDiff = Math.abs(homeScore - awayScore);
   if (scoreDiff >= 15) {
     const winner = homeScore > awayScore ? 'home' : 'away';
-    const targetDiff = Math.floor(6 + Math.random() * 8); // target: 6–13 pt win
+    const targetDiff = Math.floor(6 + Math.random() * 8); // 6–13 pt win
 
     if (winner === 'home') {
       awayScore = homeScore - targetDiff;
@@ -257,12 +257,33 @@ function simFinalScore() {
       homeScore = awayScore - targetDiff;
     }
 
-    // Ensure floor of 85 for realism
+    // Floor of 85
     if (homeScore < 85) homeScore = 85 + Math.floor(Math.random() * 5);
     if (awayScore < 85) awayScore = 85 + Math.floor(Math.random() * 5);
   }
 
-  // Update scores in DOM
+  // ⏱️ Handle Tie Game — simulate OT
+  let wentToOT = false;
+  if (homeScore === awayScore) {
+    wentToOT = true;
+
+    const homeBoost = (Math.random() * 4 + 5) + (homeStrength / 10);
+    const awayBoost = (Math.random() * 4 + 5) + (awayStrength / 10);
+
+    homeScore += Math.round(homeBoost);
+    awayScore += Math.round(awayBoost);
+
+    // Break tie if still equal (extremely rare)
+    if (homeScore === awayScore) {
+      if (Math.random() > 0.5) {
+        homeScore += 1;
+      } else {
+        awayScore += 1;
+      }
+    }
+  }
+
+  // Update DOM
   awayScoreSection.querySelectorAll("h3")[1].textContent = awayScore;
   homeScoreSection.querySelectorAll("h3")[1].textContent = homeScore;
 
@@ -270,12 +291,13 @@ function simFinalScore() {
   const homeTeamData = allTeams[homeTeamIndex + 1];
   const awayTeamData = allTeams[awayTeamIndex + 1];
 
-  if (homeScore > awayScore) {
-    winnerArrow.innerText = "Final >";
+  let homeWon = homeScore > awayScore;
+  if (homeWon) {
+    winnerArrow.innerText = wentToOT ? "Final/OT >" : "Final >";
     homeTeamData[0] = (parseInt(homeTeamData[0]) + 1).toString(); // win
     awayTeamData[1] = (parseInt(awayTeamData[1]) + 1).toString(); // loss
   } else {
-    winnerArrow.innerText = "< Final";
+    winnerArrow.innerText = wentToOT ? "< Final/OT" : "< Final";
     awayTeamData[0] = (parseInt(awayTeamData[0]) + 1).toString(); // win
     homeTeamData[1] = (parseInt(homeTeamData[1]) + 1).toString(); // loss
   }
@@ -293,6 +315,7 @@ function simFinalScore() {
   document.getElementById("homeTeamRecord").innerText = `Record: ${homeTeamData[0]}-${homeTeamData[1]} (${homeTeamData[2]})`;
   document.getElementById("awayTeamRecord").innerText = `Record: ${awayTeamData[0]}-${awayTeamData[1]} (${awayTeamData[2]})`;
 }
+
 
 
 
@@ -435,6 +458,7 @@ function standings() {
   resultsPage.hidden = true;
   startPage.hidden = true;
   simButton.hidden = false;
+  
   const standingsBody = document.getElementById("standingsBody");
   standingsBody.innerHTML = "";
 
@@ -451,34 +475,80 @@ function standings() {
       winPct: parseFloat(stats[2]),
       offense: parseFloat(stats[3]),
       defense: parseFloat(stats[4]),
-      overall: parseFloat(stats[5])
+      overall: parseFloat(stats[5]),
+      logo: teamImage[i / 2]
     });
   }
 
   standings.sort((a, b) => b.winPct - a.winPct);
 
-  for (const team of standings) {
+  for (let i = 0; i < standings.length; i++) {
+    const team = standings[i];
     const row = document.createElement("tr");
 
-    const cells = [
-      team.name,
-      team.wins,
-      team.losses,
-      team.winPct.toFixed(3),
-      team.offense.toFixed(2),
-      team.defense.toFixed(2),
-      team.overall.toFixed(2)
+    // Determine if special border is needed
+    const isDashedBorder = i === 6;
+    const isSolidBorder = i === 10;
+
+    // Rank
+    const rankTd = document.createElement("td");
+    rankTd.textContent = i + 1;
+
+    // Team + Logo
+    const teamTd = document.createElement("td");
+    teamTd.style.display = "flex";
+    teamTd.style.alignItems = "center";
+    teamTd.style.gap = "8px";
+
+    const logoImg = document.createElement("img");
+    logoImg.src = team.logo;
+    logoImg.alt = `${team.name} logo`;
+    logoImg.style.width = "30px";
+    logoImg.style.height = "30px";
+    logoImg.style.objectFit = "contain";
+
+    const teamNameSpan = document.createElement("span");
+    teamNameSpan.textContent = team.name;
+
+    teamTd.appendChild(logoImg);
+    teamTd.appendChild(teamNameSpan);
+
+    const dataCells = [
+      rankTd,
+      teamTd,
+      createCell(team.wins),
+      createCell(team.losses),
+      createCell(team.winPct.toFixed(3)),
+      createCell(team.offense.toFixed(2)),
+      createCell(team.defense.toFixed(2)),
+      createCell(team.overall.toFixed(2))
     ];
 
-    for (const value of cells) {
-      const td = document.createElement("td");
-      td.textContent = value;
-      row.appendChild(td);
+    for (const cell of dataCells) {
+      cell.style.textAlign = "left";
+      cell.style.padding = "8px 12px";
+      cell.style.borderBottom = "1px solid #ccc";
+
+      if (isDashedBorder) {
+        cell.style.borderTop = "3px dashed black";
+      } else if (isSolidBorder) {
+        cell.style.borderTop = "3px solid black";
+      }
+
+      row.appendChild(cell);
     }
 
     standingsBody.appendChild(row);
   }
+
+  function createCell(text) {
+    const td = document.createElement("td");
+    td.textContent = text;
+    return td;
+  }
 }
+
+
 
 
 const errorMess = document.getElementById("errorMess"); 
