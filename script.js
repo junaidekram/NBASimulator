@@ -393,8 +393,7 @@ function flashTeamImage() {
         requestAnimationFrame(animateGlow);
       } else {
         if (glowCount < 1) {
-          // Start second glow
-          setTimeout(() => startGlowAnimation(glowCount + 1), 200); // brief delay between glows
+          setTimeout(() => startGlowAnimation(glowCount + 1), 200);
         } else {
           eraseScreenAnimation();
         }
@@ -496,12 +495,10 @@ function standings() {
   eastStandings.sort((a, b) => b.winPct - a.winPct);
   westStandings.sort((a, b) => b.winPct - a.winPct);
 
-  // Build and append both tables
   standingsPage.appendChild(buildStandingsTable("Eastern Conference", eastStandings));
   standingsPage.appendChild(buildStandingsTable("Western Conference", westStandings));
 }
 
-// Helper function to build table
 function buildStandingsTable(title, standings) {
   const container = document.createElement("div");
 
@@ -511,7 +508,7 @@ function buildStandingsTable(title, standings) {
   container.appendChild(heading);
 
   const table = document.createElement("table");
-  table.style.margin = "0 auto"; // ✅ Center the table
+  table.style.margin = "0 auto";
   table.style.borderCollapse = "collapse";
   table.style.marginBottom = "24px";
 
