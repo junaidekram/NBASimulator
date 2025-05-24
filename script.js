@@ -563,8 +563,15 @@ function buildStandingsTable(title, standings) {
     for (const cell of data) {
       cell.style.padding = "8px 12px";
       cell.style.borderBottom = "1px solid #ccc";
+      if (i === 5) {
+        cell.style.borderBottom = "3px dashed black";
+      } else if (i === 9) {
+        cell.style.borderBottom = "3px solid black";
+      }
+
       row.appendChild(cell);
     }
+
 
     tbody.appendChild(row);
   }
