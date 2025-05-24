@@ -458,6 +458,7 @@ function standings() {
   resultsPage.hidden = true;
   startPage.hidden = true;
   simButton.hidden = false;
+  simScorePage.hidden = true;
 
   // Clear the standings container
   standingsPage.innerHTML = "<h1 class='pageTitle'>Standings</h1>";
@@ -595,6 +596,7 @@ function simulate() {
     animationValue = 5;
     homeValue = 0;
     awayValue = 0;
+    errorMess.innerText = "";
     const getHomeTeam = document.getElementById("homeTeam");
     const getAwayTeam = document.getElementById("awayTeam");
     const awayTeam = getAwayTeam.value;
