@@ -207,7 +207,7 @@ function simFinalScore() {
   homeScore = Math.random() * 30 + 87;
   awayScore = Math.random() * 30 + 87;
 
-  // Strength impact (clamped to avoid extremes)
+  // Strength impact
   const strengthGap = homeStrength - awayStrength;
   const clampedImpact = Math.max(Math.min(strengthGap, 2.5), -2.5);
   homeScore += clampedImpact * 1.5;
@@ -217,12 +217,11 @@ function simFinalScore() {
   homeScore += homeStrength / 4;
   awayScore += awayStrength / 4;
 
-  // Adjust based on offense/defense stats
-  homeScore *= parseFloat(allTeams[homeTeamIndex + 1][3]); // home offense
-  homeScore *= parseFloat(allTeams[awayTeamIndex + 1][4]); // away defense
+  homeScore *= parseFloat(allTeams[homeTeamIndex + 1][3]);
+  homeScore *= parseFloat(allTeams[awayTeamIndex + 1][4]); 
 
-  awayScore *= parseFloat(allTeams[awayTeamIndex + 1][3]); // away offense
-  awayScore *= parseFloat(allTeams[homeTeamIndex + 1][4]); // home defense
+  awayScore *= parseFloat(allTeams[awayTeamIndex + 1][3]);
+  awayScore *= parseFloat(allTeams[homeTeamIndex + 1][4]);
 
   // Underdog performance boost
   const upsetSwing = Math.random();
@@ -230,12 +229,12 @@ function simFinalScore() {
 
   if (strengthGap > 0) {
     // Home is better
-    awayScore += upsetBias * (upsetSwing * 14);
-    homeScore -= upsetBias * (Math.random() * 5);
+    awayScore += upsetBias * (upsetSwing * 10);
+    homeScore -= upsetBias * (Math.random() * 3);
   } else if (strengthGap < 0) {
     // Away is better
-    homeScore += upsetBias * (upsetSwing * 14);
-    awayScore -= upsetBias * (Math.random() * 5);
+    homeScore += upsetBias * (upsetSwing * 10);
+    awayScore -= upsetBias * (Math.random() * 3);
   }
 
   // Final game randomness
