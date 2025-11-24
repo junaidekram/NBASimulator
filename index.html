@@ -1,177 +1,94 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <title>NBA Simulation Game</title>
-        <link rel="stylesheet" href="./style.css">
-    </head>
-    <body> 
-        <canvas id="canvas" width="900" height="700"></canvas>
-        <div id="homePageContent" class="page">
-            <h1 class="pageTitle">NBA Simulation</h1>
-            <br/>
-            <img src="https://images.ctfassets.net/h8q6lxmb5akt/5qXnOINbPrHKXWa42m6NOa/421ab176b501f5bdae71290a8002545c/nba-logo_2x.png" id="nba-logo"/>
-            <br/> 
-            <button onclick="startLogin()">Play</button>
-        </div>
-        <div id="loginDiv" class="page">
-            <h2 class="pageTitle">Login / Signup</h2>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NBA Simulator — Redesigned</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container">
+      <h1>NBA Simulator</h1>
+      <div class="actions">
+        <button id="saveUser" class="btn primary">Save User</button>
+        <button id="loadUser" class="btn">Load User</button>
+      </div>
+    </div>
+  </header>
 
-        <!-- Form for Login / Signup -->
-            <input type="text" id="username" placeholder="Username" required />
-            <input type="password" id="password" placeholder="Password" required />
-            <button onclick="login()" style="font-size: 15px">Login / Signup</button>
-            <div id="message"></div>
+  <main class="container main-grid">
+    <section class="panel teams-panel">
+      <h2>Teams</h2>
+      <form id="addTeamForm" class="add-team">
+        <input id="teamNameInput" placeholder="Team name (e.g. Lakers)" required />
+        <input id="teamRatingInput" type="number" min="50" max="150" value="100" />
+        <button class="btn" type="submit">Add Team</button>
+      </form>
+
+      <ul id="teamsList" class="teams-list"></ul>
+
+      <div class="legend">
+        <small>Tip: Add at least two teams, then pick them in the simulator.</small>
+      </div>
+    </section>
+
+    <section class="panel sim-panel">
+      <h2>Simulator</h2>
+
+      <div class="sim-controls">
+        <label>Home
+          <select id="teamASelect"></select>
+        </label>
+        <label>Away
+          <select id="teamBSelect"></select>
+        </label>
+      </div>
+
+      <div class="sim-buttons">
+        <button id="simulateBtn" class="btn primary">Simulate Game</button>
+        <button id="simulateSeasonBtn" class="btn">Simulate Season (82 games)</button>
+      </div>
+
+      <div id="lastResult" class="result-card hidden"></div>
+
+      <div class="standings-card">
+        <h3>Standings</h3>
+        <div id="standingsList"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Season Modal -->
+  <div id="seasonModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="modal-close" id="seasonClose">×</button>
+      <h3 id="seasonTitle">Season Simulation</h3>
+      <div id="seasonBody">
+        <div id="seasonGameCard" class="result-card"></div>
+        <div class="modal-actions">
+          <button id="seasonContinue" class="btn primary">Continue</button>
+          <button id="seasonStandings" class="btn">Standings</button>
+          <button id="seasonEnd" class="btn danger">End</button>
         </div>
-        <div id="startPage" class="page">
-            <h1 class="pageTitle">Welcome</h1>
-            <br/>
-            <button id="standings" onclick="standings()">Standings</button>
-            <button id="simulate" onclick="simChoicePage()">Simulate</button>
-            <br/>
-            <br/>
-            <br/>
-            <img src="https://static.vecteezy.com/system/resources/previews/044/311/465/non_2x/nba-basketball-team-logo-collection-nba-tournament-teams-emblems-rivne-ukraine-november-20-2023-free-vector.jpg" width="80%" height="15%"/>
-        </div>
-        <div id="simChoicePage" class="page">
-            <h1 class="pageTitle">Choose Simulation Type</h1>
-            <br/>
-            <button id="simScore" onclick="simulateScore()">Score</button>
-            <button id="simGame" onclick="simulateGame()">Game</button> 
-        </div>
-        <div id="simulateScorePage" class="page">
-            <h1 class="pageTitle">Simulate Score</h1>
-            <br/>
-            <br/>
-            <br/>
-            <select name="Choose Away Team" id="awayTeam" class="selectBox">
-                <option value="invalid" selected>Choose Away Team</option>
-                <option value="1">Atlanta Hawks</option>
-                <option value="2">Boston Celtics</option>
-                <option value="3">Brooklyn Nets</option>
-                <option value="4">Charlotte Hornets</option>
-                <option value="5">Chicago Bulls</option>
-                <option value="6">Cleveland Caviliers</option>
-                <option value="7">Dallas Mavericks</option>
-                <option value="8">Denver Nuggets</option>
-                <option value="9">Detroit Pistons</option>
-                <option value="10">Golden State Warriors</option>
-                <option value="11">Houston Rockets</option>
-                <option value="12">Indiana Pacers</option>
-                <option value="13">Los Angeles Clippers</option>
-                <option value="14">Los Angeles Lakers</option>
-                <option value="15">Memphis Grizzlies</option>
-                <option value="16">Miami Heat</option>
-                <option value="17">Milwaukee Bucks</option>
-                <option value="18">Minnesota Timberwolves</option>
-                <option value="19">New Orleans Pelicans</option>
-                <option value="20">New York Knicks</option>
-                <option value="21">Oklahoma City Thunder</option>
-                <option value="22">Orlando Magic</option>
-                <option value="23">Philadelphia 76ers</option>
-                <option value="24">Phoenix Suns</option>
-                <option value="25">Portland Trailblazers</option>
-                <option value="26">Sacramento Kings</option>
-                <option value="27">San Antonio Spurs</option>
-                <option value="28">Toronto Raptors</option>
-                <option value="29">Utah Jazz</option>
-                <option value="30">Washington Wizards</option>
-            </select>
-             at 
-            <select name="Choose Home Team" id="homeTeam" class="selectBox">
-                <option value="invalid1" selected>Choose Home Team</option>
-                <option value="1">Atlanta Hawks</option>
-                <option value="2">Boston Celtics</option>
-                <option value="3">Brooklyn Nets</option>
-                <option value="4">Charlotte Hornets</option>
-                <option value="5">Chicago Bulls</option>
-                <option value="6">Cleveland Caviliers</option>
-                <option value="7">Dallas Mavericks</option>
-                <option value="8">Denver Nuggets</option>
-                <option value="9">Detroit Pistons</option>
-                <option value="10">Golden State Warriors</option>
-                <option value="11">Houston Rockets</option>
-                <option value="12">Indiana Pacers</option>
-                <option value="13">Los Angeles Clippers</option>
-                <option value="14">Los Angeles Lakers</option>
-                <option value="15">Memphis Grizzlies</option>
-                <option value="16">Miami Heat</option>
-                <option value="17">Milwaukee Bucks</option>
-                <option value="18">Minnesota Timberwolves</option>
-                <option value="19">New Orleans Pelicans</option>
-                <option value="20">New York Knicks</option>
-                <option value="21">Oklahoma City Thunder</option>
-                <option value="22">Orlando Magic</option>
-                <option value="23">Philadelphia 76ers</option>
-                <option value="24">Phoenix Suns</option>
-                <option value="25">Portland Trailblazers</option>
-                <option value="26">Sacramento Kings</option>
-                <option value="27">San Antonio Spurs</option>
-                <option value="28">Toronto Raptors</option>
-                <option value="29">Utah Jazz</option>
-                <option value="30">Washington Wizards</option>
-            </select>
-            <br/>
-            <br/>
-            <div id="errorMess"></div>
-            <br/>
-            <button onclick="standings()" style="font-size: 20px;">Check Standings</button>
-            <button onclick="simulate()" style="font-size: 20px;">Simulate</button>
-            <br/>
-            <br/>
-            <br/>
-            <br/>
-            <br/>
-            <br/>
-            <br/>
-            <button onclick="saveUserData()" style="font-size: 20px;">Save Session</button>
-            <button onclick="resetUser()" style="font-size: 20px;">Reset User</button>
-        </div>
-        <div id="finalScore" class="page">
-            <h1 class="pageTitle">Results</h1>
-            <br/>
-            <br/>
-            <br/>
-            <section style="float: left" class="section" id="awayScore">
-                <h3 style="font-size: 27px">Indiana Pacers</h3>
-                <br/>
-                <img src="https://s.yimg.com/cv/apiv2/default/nba/20181214/500x500/pacers_wbg.png" height="75">
-                <h3 style="font-size: 75px; display: inline-block">120</h3>
-                <br/>
-                <div id="awayTeamRecord"></div>
-            </section>
-            <section style="float:left" class="section">
-                <br/>
-                <br/>
-                <br/>
-                <br/>
-                <h3 style="font-size: 50px" id="result">Final ></h3>
-            </section>
-            <section style="float: right" class="section" id="homeScore">
-                <h3 style="font-size: 27px">Indiana Pacers</h3>
-                <br/>
-                <h3 style="font-size: 75px; display: inline-block">122</h3>
-                <img src="https://s.yimg.com/cv/apiv2/default/nba/20181214/500x500/pacers_wbg.png" height="75">
-                <br/>
-                <div id="homeTeamRecord"></div>
-            </section>
-        </div>
-        <div id="standingsPage">
-            <h1 class="pageTitle">Standings</h1>
-            <div id="standingsContainer" style="display:flex; flex-wrap:wrap; gap:20px;">
-                <div id="eastStandings"></div>
-                <div id="westStandings"></div>
-            </div>
-        </div>
-        <div id="simButton">
-            <button onclick="simChoicePage()" style="font-size: 20px;">Simulate</button>
-            <button onclick="standings()" style="font-size: 20px;">Standings</button>
-            <br/>
-            <br/>
-            <button onclick="saveUserData()" style="font-size: 20px;">Save Session</button>
-            <button onclick="resetUser()" style="font-size: 20px;">Reset User</button>
-        </div>
-    <script src="./script.js"></script>
-    </body> 
+      </div>
+    </div>
+  </div>
+
+  <!-- Standings Modal -->
+  <div id="standingsModal" class="modal hidden">
+    <div class="modal-content small">
+      <button class="modal-close" id="standingsClose">×</button>
+      <h3>Standings</h3>
+      <div id="modalStandingsList"></div>
+      <div style="text-align:right;margin-top:12px;"><button id="closeStandingsBtn" class="btn">Close</button></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">Built with ❤️ — Redesigned UI + Season Simulation</div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
 </html>
