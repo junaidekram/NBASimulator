@@ -138,7 +138,7 @@ function loadAllTeamsFromLocal() {
 function determineTeamStrength() {
   const values = [];
   for (let i = -15; i <= 15; i++) {
-    if (i !== 0) values.push(i / 2); // range: -7.5 to +7.5
+    if (i !== 0) values.push(i / 2); // range: -7.5 to +7.5 (excludes 0 to avoid neutral teams, generates exactly 30 values)
   }
 
   // Shuffle values to assign random team strengths
