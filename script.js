@@ -279,6 +279,101 @@ function applyGameResultToTeams(homeTeamNum, awayTeamNum, homeScore, awayScore, 
 /* -------------------------- season simulation state -------------------------- */
 let seasonRunState = null;
 
+// Constants for season simulation
+const MAX_MATCHUPS_BETWEEN_TEAMS = 5; // Allow up to 5 games between any two teams if needed to reach 82
+
+// Helper to get team count from allTeams array
+// Note: allTeams is structured as [teamName1, teamData1, teamName2, teamData2, ...]
+function getTeamCount() {
+  return allTeams.length / 2;
+}
+
+// Track matchups between teams to minimize repeats
+// matchupCounts[teamA][teamB] = number of games played between them
+function initializeMatchupCounts() {
+  const counts = {};
+  const teamCount = getTeamCount();
+  for (let i = 0; i < teamCount; i++) {
+    counts[i] = {};
+    for (let j = 0; j < teamCount; j++) {
+      if (i !== j) {
+        counts[i][j] = 0;
+      }
+    }
+  }
+  return counts;
+}
+
+// Get total games played for a team
+function getTeamGamesPlayed(teamIdx) {
+  const teamData = allTeams[teamIdx * 2 + 1];
+  return parseInt(teamData[0]) + parseInt(teamData[1]);
+}
+
+// Find next best matchup - returns {homeIdx, awayIdx} or null if all teams at 82
+function findNextMatchup(matchupCounts) {
+  const teamCount = getTeamCount();
+  
+  // Get teams that need more games
+  const teamsNeedingGames = [];
+  for (let i = 0; i < teamCount; i++) {
+    const gamesPlayed = getTeamGamesPlayed(i);
+    if (gamesPlayed < 82) {
+      teamsNeedingGames.push({ idx: i, gamesPlayed });
+    }
+  }
+  
+  // If no teams need games, season is complete
+  if (teamsNeedingGames.length === 0) {
+    return null;
+  }
+  
+  // If only one team needs games, find any opponent (even if exceeds normal limit)
+  if (teamsNeedingGames.length === 1) {
+    const lastTeam = teamsNeedingGames[0].idx;
+    // Find opponent with fewest games against this team
+    let bestOpponent = null;
+    let minGames = Infinity;
+    for (let i = 0; i < teamCount; i++) {
+      if (i !== lastTeam) {
+        const gamesAgainst = matchupCounts[lastTeam][i] || 0;
+        if (gamesAgainst < minGames) {
+          minGames = gamesAgainst;
+          bestOpponent = i;
+        }
+      }
+    }
+    return bestOpponent !== null ? { homeIdx: lastTeam, awayIdx: bestOpponent } : null;
+  }
+  
+  // Find best matchup: prioritize teams that need games and have played each other least
+  let bestMatchup = null;
+  let bestScore = -1;
+  
+  for (let i = 0; i < teamsNeedingGames.length; i++) {
+    for (let j = i + 1; j < teamsNeedingGames.length; j++) {
+      const teamA = teamsNeedingGames[i].idx;
+      const teamB = teamsNeedingGames[j].idx;
+      const matchupCount = matchupCounts[teamA][teamB] || 0;
+      
+      // Allow up to MAX_MATCHUPS_BETWEEN_TEAMS games if both teams need games to reach 82
+      if (matchupCount >= MAX_MATCHUPS_BETWEEN_TEAMS) continue;
+      
+      // Prefer matchups with fewer previous games
+      // Higher score = better matchup (teams need games more, played less)
+      const gamesNeeded = (82 - teamsNeedingGames[i].gamesPlayed) + (82 - teamsNeedingGames[j].gamesPlayed);
+      const score = gamesNeeded * 100 - matchupCount * 10;
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatchup = { homeIdx: teamA, awayIdx: teamB };
+      }
+    }
+  }
+  
+  return bestMatchup;
+}
+
 /* -------------------------- UI helper functions -------------------------- */
 function updateTeamSelects() {
   // Clear existing options
@@ -400,24 +495,26 @@ function simulateSingleGame() {
 
 /* -------------------------- Season simulation -------------------------- */
 function startSeasonSim() {
-  const homeIdx = parseInt(teamASelect.value);
-  const awayIdx = parseInt(teamBSelect.value);
+  // Initialize matchup tracking
+  const matchupCounts = initializeMatchupCounts();
   
-  if (isNaN(homeIdx) || isNaN(awayIdx)) {
-    alert('Please select both home and away teams');
+  // Find the first matchup
+  const firstMatchup = findNextMatchup(matchupCounts);
+  
+  if (!firstMatchup) {
+    alert('All teams have already completed 82 games!');
     return;
   }
   
-  if (homeIdx === awayIdx) {
-    alert('Please select two different teams for a season');
-    return;
-  }
+  // Calculate total games needed (each team plays 82 games, divide by 2 since each game involves 2 teams)
+  const totalGamesInSeason = (getTeamCount() * 82) / 2;
   
   seasonRunState = {
-    homeIdx,
-    awayIdx,
-    currentGame: 1,
-    totalGames: 82
+    matchupCounts,
+    currentMatchup: firstMatchup,
+    gamesSimulated: 0,
+    totalGamesInSeason,
+    lastResult: null
   };
   
   seasonModal.classList.remove('hidden');
@@ -427,25 +524,66 @@ function startSeasonSim() {
 function renderSeasonGame() {
   if (!seasonRunState) return;
   
-  const { homeIdx, awayIdx, currentGame, totalGames } = seasonRunState;
+  const { currentMatchup, gamesSimulated, totalGamesInSeason, lastResult } = seasonRunState;
+  
+  if (!currentMatchup) {
+    // Season complete
+    seasonTitle.textContent = 'Season Complete!';
+    seasonGameCard.innerHTML = `
+      <h4>All teams have reached 82 games!</h4>
+      <p style="text-align: center; margin-top: 12px;">Total games simulated: ${gamesSimulated}</p>
+    `;
+    return;
+  }
+  
+  const { homeIdx, awayIdx } = currentMatchup;
   const homeTeamName = allTeams[homeIdx * 2];
   const awayTeamName = allTeams[awayIdx * 2];
+  const homeGamesPlayed = getTeamGamesPlayed(homeIdx);
+  const awayGamesPlayed = getTeamGamesPlayed(awayIdx);
   
-  seasonTitle.textContent = `Season Simulation - Game ${currentGame} of ${totalGames}`;
+  seasonTitle.textContent = `Season Simulation - Game ${gamesSimulated + 1} of ${totalGamesInSeason}`;
   
-  // Generate a preview without applying results
+  // If we just simulated a game, show the result
+  if (lastResult) {
+    const { homeScore, awayScore, wentToOT, homeTeamName: lastHomeName, awayTeamName: lastAwayName } = lastResult;
+    seasonGameCard.innerHTML = `
+      <h4>Last Game Result${wentToOT ? ' (OT)' : ''}</h4>
+      <div style="display: flex; justify-content: space-around; margin: 12px 0;">
+        <div style="text-align: center;">
+          <div style="font-size: 18px; font-weight: 700;">${lastHomeName}</div>
+          <div style="font-size: 32px; font-weight: 900; color: ${homeScore > awayScore ? 'var(--success)' : 'var(--muted)'};">${homeScore}</div>
+        </div>
+        <div style="align-self: center; font-size: 20px;">vs</div>
+        <div style="text-align: center;">
+          <div style="font-size: 18px; font-weight: 700;">${lastAwayName}</div>
+          <div style="font-size: 32px; font-weight: 900; color: ${awayScore > homeScore ? 'var(--success)' : 'var(--muted)'};">${awayScore}</div>
+        </div>
+      </div>
+      <div style="text-align: center; color: var(--muted); margin-top: 8px;">
+        ${homeScore > awayScore ? lastHomeName : lastAwayName} wins!
+      </div>
+      <hr style="margin: 16px 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
+    `;
+  } else {
+    seasonGameCard.innerHTML = '';
+  }
+  
+  // Show next game preview
   const { homeScore, awayScore } = generateGameScoresByTeamNumber(homeIdx, awayIdx);
   
-  seasonGameCard.innerHTML = `
-    <h4>Next Game Preview</h4>
+  seasonGameCard.innerHTML += `
+    <h4>Next Game</h4>
     <div style="display: flex; justify-content: space-around; margin: 12px 0;">
       <div style="text-align: center;">
         <div style="font-size: 18px; font-weight: 700;">${homeTeamName}</div>
+        <div style="font-size: 14px; color: var(--muted);">${homeGamesPlayed} games played</div>
         <div style="font-size: 32px; font-weight: 900;">${homeScore}</div>
       </div>
       <div style="align-self: center; font-size: 20px;">vs</div>
       <div style="text-align: center;">
         <div style="font-size: 18px; font-weight: 700;">${awayTeamName}</div>
+        <div style="font-size: 14px; color: var(--muted);">${awayGamesPlayed} games played</div>
         <div style="font-size: 32px; font-weight: 900;">${awayScore}</div>
       </div>
     </div>
@@ -455,7 +593,18 @@ function renderSeasonGame() {
 function continueSeasonGame() {
   if (!seasonRunState) return;
   
-  const { homeIdx, awayIdx, currentGame, totalGames } = seasonRunState;
+  const { currentMatchup, matchupCounts } = seasonRunState;
+  
+  if (!currentMatchup) {
+    // Season already complete
+    alert('Season is complete! All teams have reached 82 games.');
+    seasonRunState = null;
+    seasonModal.classList.add('hidden');
+    renderStandings();
+    return;
+  }
+  
+  const { homeIdx, awayIdx } = currentMatchup;
   const homeTeamName = allTeams[homeIdx * 2];
   const awayTeamName = allTeams[awayIdx * 2];
   
@@ -463,33 +612,35 @@ function continueSeasonGame() {
   const { homeScore, awayScore, wentToOT } = generateGameScoresByTeamNumber(homeIdx, awayIdx);
   applyGameResultToTeams(homeIdx, awayIdx, homeScore, awayScore, wentToOT);
   
-  seasonGameCard.innerHTML = `
-    <h4>Game ${currentGame} Result${wentToOT ? ' (OT)' : ''}</h4>
-    <div style="display: flex; justify-content: space-around; margin: 12px 0;">
-      <div style="text-align: center;">
-        <div style="font-size: 18px; font-weight: 700;">${homeTeamName}</div>
-        <div style="font-size: 32px; font-weight: 900; color: ${homeScore > awayScore ? 'var(--success)' : 'var(--muted)'};">${homeScore}</div>
-      </div>
-      <div style="align-self: center; font-size: 20px;">vs</div>
-      <div style="text-align: center;">
-        <div style="font-size: 18px; font-weight: 700;">${awayTeamName}</div>
-        <div style="font-size: 32px; font-weight: 900; color: ${awayScore > homeScore ? 'var(--success)' : 'var(--muted)'};">${awayScore}</div>
-      </div>
-    </div>
-    <div style="text-align: center; color: var(--muted); margin-top: 8px;">
-      ${homeScore > awayScore ? homeTeamName : awayTeamName} wins!
-    </div>
-  `;
+  // Update matchup counts
+  matchupCounts[homeIdx][awayIdx] = (matchupCounts[homeIdx][awayIdx] || 0) + 1;
+  matchupCounts[awayIdx][homeIdx] = (matchupCounts[awayIdx][homeIdx] || 0) + 1;
   
-  if (currentGame >= totalGames) {
-    alert(`Season complete! Simulated ${totalGames} games.`);
-    seasonRunState = null;
-    seasonModal.classList.add('hidden');
-    renderStandings();
-  } else {
-    seasonRunState.currentGame++;
-    setTimeout(renderSeasonGame, 500);
-  }
+  // Store the result for display
+  seasonRunState.lastResult = {
+    homeScore,
+    awayScore,
+    wentToOT,
+    homeTeamName,
+    awayTeamName
+  };
+  
+  // Increment games simulated
+  seasonRunState.gamesSimulated++;
+  
+  // Find next matchup
+  const nextMatchup = findNextMatchup(matchupCounts);
+  seasonRunState.currentMatchup = nextMatchup;
+  
+  // Render next game or completion screen
+  setTimeout(() => {
+    if (!nextMatchup) {
+      // Season complete
+      alert(`Season complete! Simulated ${seasonRunState.gamesSimulated} games. All teams have reached 82 games.`);
+      renderStandings();
+    }
+    renderSeasonGame();
+  }, 500);
 }
 
 function showStandingsModal() {
