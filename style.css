@@ -37,6 +37,7 @@ body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI"
 .modal.hidden{display:none}
 .modal-content{background:var(--card);padding:18px;border-radius:12px;min-width:420px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(2,6,23,0.6)}
 .modal-content.small{min-width:320px;}
+.modal-content.large{min-width:800px;max-width:95vw;}
 .modal-close{position:absolute;margin-left:10px;margin-top:-10px;background:transparent;border:none;color:#fff;font-size:28px;cursor:pointer}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .footer{padding:18px;text-align:center;color:var(--muted);font-size:13px;margin-top:18px}
