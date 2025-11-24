@@ -411,6 +411,7 @@ function renderConferenceStandings(tbody, conference) {
     if (stats[6] === conference) {
       teams.push({
         name: allTeams[i],
+        teamIndex: i / 2,
         wins: parseInt(stats[0]),
         losses: parseInt(stats[1]),
         pct: parseFloat(stats[2]),
@@ -429,10 +430,26 @@ function renderConferenceStandings(tbody, conference) {
   
   // Render table rows
   tbody.innerHTML = '';
-  teams.forEach((team) => {
+  teams.forEach((team, index) => {
     const row = document.createElement('tr');
+    const logo = teamImage[team.teamIndex];
+    
+    // Add separator classes
+    let separatorClass = '';
+    if (index === 5) {
+      separatorClass = 'playoff-line';
+    } else if (index === 9) {
+      separatorClass = 'playin-line';
+    }
+    
+    row.className = separatorClass;
     row.innerHTML = `
-      <td>${team.name}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="${logo}" alt="${team.name}" style="width: 24px; height: 24px; object-fit: contain;" />
+          <span>${team.name}</span>
+        </div>
+      </td>
       <td>${team.wins}</td>
       <td>${team.losses}</td>
       <td>${team.pct}</td>
@@ -473,16 +490,21 @@ function simulateSingleGame() {
   const awayTeamName = allTeams[awayIdx * 2];
   
   // Display result
+  const homeLogo = teamImage[homeIdx];
+  const awayLogo = teamImage[awayIdx];
+  
   lastResult.classList.remove('hidden');
   lastResult.innerHTML = `
     <h4>Game Result${wentToOT ? ' (OT)' : ''}</h4>
     <div style="display: flex; justify-content: space-around; margin: 12px 0;">
       <div style="text-align: center;">
+        <img src="${homeLogo}" alt="${homeTeamName}" style="width: 48px; height: 48px; object-fit: contain; margin-bottom: 8px;" />
         <div style="font-size: 18px; font-weight: 700;">${homeTeamName}</div>
         <div style="font-size: 32px; font-weight: 900; color: ${homeScore > awayScore ? 'var(--success)' : 'var(--muted)'};">${homeScore}</div>
       </div>
       <div style="align-self: center; font-size: 20px;">vs</div>
       <div style="text-align: center;">
+        <img src="${awayLogo}" alt="${awayTeamName}" style="width: 48px; height: 48px; object-fit: contain; margin-bottom: 8px;" />
         <div style="font-size: 18px; font-weight: 700;">${awayTeamName}</div>
         <div style="font-size: 32px; font-weight: 900; color: ${awayScore > homeScore ? 'var(--success)' : 'var(--muted)'};">${awayScore}</div>
       </div>
@@ -546,16 +568,21 @@ function renderSeasonGame() {
   
   // If we just simulated a game, show the result
   if (lastResult) {
-    const { homeScore, awayScore, wentToOT, homeTeamName: lastHomeName, awayTeamName: lastAwayName } = lastResult;
+    const { homeScore, awayScore, wentToOT, homeTeamName: lastHomeName, awayTeamName: lastAwayName, homeIdx: lastHomeIdx, awayIdx: lastAwayIdx } = lastResult;
+    const lastHomeLogo = teamImage[lastHomeIdx];
+    const lastAwayLogo = teamImage[lastAwayIdx];
+    
     seasonGameCard.innerHTML = `
       <h4>Last Game Result${wentToOT ? ' (OT)' : ''}</h4>
       <div style="display: flex; justify-content: space-around; margin: 12px 0;">
         <div style="text-align: center;">
+          <img src="${lastHomeLogo}" alt="${lastHomeName}" style="width: 48px; height: 48px; object-fit: contain; margin-bottom: 8px;" />
           <div style="font-size: 18px; font-weight: 700;">${lastHomeName}</div>
           <div style="font-size: 32px; font-weight: 900; color: ${homeScore > awayScore ? 'var(--success)' : 'var(--muted)'};">${homeScore}</div>
         </div>
         <div style="align-self: center; font-size: 20px;">vs</div>
         <div style="text-align: center;">
+          <img src="${lastAwayLogo}" alt="${lastAwayName}" style="width: 48px; height: 48px; object-fit: contain; margin-bottom: 8px;" />
           <div style="font-size: 18px; font-weight: 700;">${lastAwayName}</div>
           <div style="font-size: 32px; font-weight: 900; color: ${awayScore > homeScore ? 'var(--success)' : 'var(--muted)'};">${awayScore}</div>
         </div>
@@ -569,22 +596,23 @@ function renderSeasonGame() {
     seasonGameCard.innerHTML = '';
   }
   
-  // Show next game preview
-  const { homeScore, awayScore } = generateGameScoresByTeamNumber(homeIdx, awayIdx);
+  // Show next game preview (without scores)
+  const homeLogo = teamImage[homeIdx];
+  const awayLogo = teamImage[awayIdx];
   
   seasonGameCard.innerHTML += `
     <h4>Next Game</h4>
     <div style="display: flex; justify-content: space-around; margin: 12px 0;">
       <div style="text-align: center;">
+        <img src="${homeLogo}" alt="${homeTeamName}" style="width: 48px; height: 48px; object-fit: contain; margin-bottom: 8px;" />
         <div style="font-size: 18px; font-weight: 700;">${homeTeamName}</div>
         <div style="font-size: 14px; color: var(--muted);">${homeGamesPlayed} games played</div>
-        <div style="font-size: 32px; font-weight: 900;">${homeScore}</div>
       </div>
       <div style="align-self: center; font-size: 20px;">vs</div>
       <div style="text-align: center;">
+        <img src="${awayLogo}" alt="${awayTeamName}" style="width: 48px; height: 48px; object-fit: contain; margin-bottom: 8px;" />
         <div style="font-size: 18px; font-weight: 700;">${awayTeamName}</div>
         <div style="font-size: 14px; color: var(--muted);">${awayGamesPlayed} games played</div>
-        <div style="font-size: 32px; font-weight: 900;">${awayScore}</div>
       </div>
     </div>
   `;
@@ -622,7 +650,9 @@ function continueSeasonGame() {
     awayScore,
     wentToOT,
     homeTeamName,
-    awayTeamName
+    awayTeamName,
+    homeIdx,
+    awayIdx
   };
   
   // Increment games simulated
