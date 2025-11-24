@@ -279,13 +279,23 @@ function applyGameResultToTeams(homeTeamNum, awayTeamNum, homeScore, awayScore, 
 /* -------------------------- season simulation state -------------------------- */
 let seasonRunState = null;
 
+// Constants for season simulation
+const MAX_MATCHUPS_BETWEEN_TEAMS = 5; // Allow up to 5 games between any two teams if needed to reach 82
+
+// Helper to get team count from allTeams array
+// Note: allTeams is structured as [teamName1, teamData1, teamName2, teamData2, ...]
+function getTeamCount() {
+  return allTeams.length / 2;
+}
+
 // Track matchups between teams to minimize repeats
 // matchupCounts[teamA][teamB] = number of games played between them
 function initializeMatchupCounts() {
   const counts = {};
-  for (let i = 0; i < allTeams.length / 2; i++) {
+  const teamCount = getTeamCount();
+  for (let i = 0; i < teamCount; i++) {
     counts[i] = {};
-    for (let j = 0; j < allTeams.length / 2; j++) {
+    for (let j = 0; j < teamCount; j++) {
       if (i !== j) {
         counts[i][j] = 0;
       }
@@ -302,7 +312,7 @@ function getTeamGamesPlayed(teamIdx) {
 
 // Find next best matchup - returns {homeIdx, awayIdx} or null if all teams at 82
 function findNextMatchup(matchupCounts) {
-  const teamCount = allTeams.length / 2;
+  const teamCount = getTeamCount();
   
   // Get teams that need more games
   const teamsNeedingGames = [];
@@ -318,9 +328,22 @@ function findNextMatchup(matchupCounts) {
     return null;
   }
   
-  // If only one team needs games, we have a problem (shouldn't happen with proper scheduling)
+  // If only one team needs games, find any opponent (even if exceeds normal limit)
   if (teamsNeedingGames.length === 1) {
-    return null;
+    const lastTeam = teamsNeedingGames[0].idx;
+    // Find opponent with fewest games against this team
+    let bestOpponent = null;
+    let minGames = Infinity;
+    for (let i = 0; i < teamCount; i++) {
+      if (i !== lastTeam) {
+        const gamesAgainst = matchupCounts[lastTeam][i] || 0;
+        if (gamesAgainst < minGames) {
+          minGames = gamesAgainst;
+          bestOpponent = i;
+        }
+      }
+    }
+    return bestOpponent !== null ? { homeIdx: lastTeam, awayIdx: bestOpponent } : null;
   }
   
   // Find best matchup: prioritize teams that need games and have played each other least
@@ -333,8 +356,8 @@ function findNextMatchup(matchupCounts) {
       const teamB = teamsNeedingGames[j].idx;
       const matchupCount = matchupCounts[teamA][teamB] || 0;
       
-      // Allow up to 5 games if both teams need games to reach 82
-      if (matchupCount >= 5) continue;
+      // Allow up to MAX_MATCHUPS_BETWEEN_TEAMS games if both teams need games to reach 82
+      if (matchupCount >= MAX_MATCHUPS_BETWEEN_TEAMS) continue;
       
       // Prefer matchups with fewer previous games
       // Higher score = better matchup (teams need games more, played less)
@@ -483,8 +506,8 @@ function startSeasonSim() {
     return;
   }
   
-  // Calculate total games needed (30 teams * 82 games / 2 since each game involves 2 teams)
-  const totalGamesInSeason = (30 * 82) / 2;
+  // Calculate total games needed (each team plays 82 games, divide by 2 since each game involves 2 teams)
+  const totalGamesInSeason = (getTeamCount() * 82) / 2;
   
   seasonRunState = {
     matchupCounts,
