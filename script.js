@@ -849,8 +849,8 @@ function setupPlayInGames() {
       home: westTeams[8],
       away: westTeams[9],
       series: [null],
-      loser: null,
-      winner: null
+      winner: null,
+      loser: null
     }
   ];
   
