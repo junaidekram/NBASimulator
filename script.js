@@ -1,49 +1,12 @@
-/* script.js — updated
-   - preserves original allTeams/defaultAllTeams/teamImage/teamColor and sim math
-   - initializes allTeams at app start (populates all 30 teams with generated ratings if not present)
-   - saves allTeams to localStorage on Save and whenever records change
-   - adds season-simulation helpers that reuse the existing scoring algorithm
+/* script.js — Rewritten for redesigned UI
+   - Works with new HTML structure (panels, modals, select dropdowns)
+   - Preserves original simulation logic and team data
+   - Removes references to non-existent old HTML elements
 */
 
-/* -------------------------- existing globals -------------------------- */
-const homePage = document.getElementById("homePageContent");
-const startPage = document.getElementById("startPage");
-const simTypePage = document.getElementById("simChoicePage");
-const simScorePage = document.getElementById("simulateScorePage");
-const standingsPage = document.getElementById("standingsPage");
-const loginPage = document.getElementById("loginDiv");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const simButton = document.getElementById("simButton");
-const resultsPage = document.getElementById("finalScore");
-const awayScore = document.getElementById("awayScore");
-const homeScore = document.getElementById("homeScore");
-const winnerArrow = document.getElementById("result");
-
-homePage.hidden = false;
-startPage.hidden = true;
-simTypePage.hidden = true;
-simScorePage.hidden = true;
-standingsPage.hidden = true;
-loginPage.hidden = true;  
-canvas.hidden = true;
-simButton.hidden = true;
-resultsPage.hidden = true;
-
-function startGame() {
-   startPage.hidden = false;
-}
-
-var westernConference = [];
-var easternConference = []; 
-var allTeams = [];
-var defaultAllTeams = []; 
-let currentUser = null;
-const getHomeTeam = document.getElementById("homeTeam");
-const getAwayTeam = document.getElementById("awayTeam");
-
-/* -------------------------- default teams -------------------------- */
-defaultAllTeams = [
+/* -------------------------- Team Data & Constants -------------------------- */
+let allTeams = [];
+let defaultAllTeams = [
     "Atlanta Hawks", ["0", "0", ".000", "0", "0", "0"],
     "Boston Celtics", ["0", "0", ".000", "0", "0", "0"],
     "Brooklyn Nets", ["0", "0", ".000", "0", "0", "0"],
@@ -76,9 +39,6 @@ defaultAllTeams = [
     "Washington Wizards", ["0", "0", ".000", "0", "0", "0"],
 ];
 
-// teamArray[x][1]=wins, 2=losses, 3=pct, 4=o rating, 5=d rating, 6=overall rating 
-
-/* -------------------------- styling assets (unchanged) -------------------------- */
 const teamColor = [
   '#E03A3E', '#007A33', '#000000', '#00788C', '#CE1141', '#6F263D',
   '#00538C', '#0E2240', '#006BB6', '#1D428A', '#CE1141', '#002D62',
@@ -120,9 +80,10 @@ const teamImage = [
   "https://a.espncdn.com/guid/64d73af6-b8ec-e213-87e8-a4eab3a692e7/logos/primary_logo_on_black_color.png",
 ];
 
-/* -------------------------- helper persistence -------------------------- */
+let currentUser = null;
 const ALL_TEAMS_KEY = "allTeams";
 
+/* -------------------------- LocalStorage Helpers -------------------------- */
 function saveAllTeamsToLocal() {
   try {
     localStorage.setItem(ALL_TEAMS_KEY, JSON.stringify(allTeams));
@@ -143,42 +104,37 @@ function loadAllTeamsFromLocal() {
   }
 }
 
-/* -------------------------- rating assignment (unchanged) -------------------------- */
+/* -------------------------- Team Strength Assignment -------------------------- */
 function determineTeamStrength() {
   const values = [];
   for (let i = -15; i <= 15; i++) {
-    if (i !== 0) values.push(i / 2); // range: -7.5 to +7.5
+    if (i !== 0) values.push(i / 2);
   }
 
-  // Shuffle values to assign random team strengths
+  // Shuffle values
   for (let i = values.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [values[i], values[j]] = [values[j], values[i]];
   }
 
-  // Assign team strength and calculate offense/defense multipliers
+  // Assign team strength
   for (let i = 0; i < allTeams.length; i += 2) {
     const stats = allTeams[i + 1];
     const strength = values[i / 2];
     stats[5] = strength;
 
-    const normalized = (strength + 7.5) / 15; // maps to 0–1
-
-    // Offense: ranges roughly from 0.95 to 1.15
+    const normalized = (strength + 7.5) / 15;
     const offense = 1.0 + (Math.random() * 0.1 - 0.05) + (normalized - 0.5) * 0.2;
-
-    // Defense: ranges from 0.95 to 1.15 inversely
     const defense = 1.0 - (Math.random() * 0.1 - 0.05) - (normalized - 0.5) * 0.2;
 
     stats[3] = parseFloat(offense.toFixed(3));
     stats[4] = parseFloat(defense.toFixed(3));
   }
 
-  // Save after generation so default initialization persists
   saveAllTeamsToLocal();
 }
 
-/* -------------------------- game score generation (extracted) -------------------------- */
+/* -------------------------- Game Simulation Logic -------------------------- */
 function generateGameScoresByTeamNumber(homeTeamNum, awayTeamNum) {
   const homeTeamIndex = homeTeamNum * 2;
   const awayTeamIndex = awayTeamNum * 2;
@@ -256,8 +212,7 @@ function generateGameScoresByTeamNumber(homeTeamNum, awayTeamNum) {
   return { homeScore, awayScore, wentToOT };
 }
 
-/* -------------------------- apply result helper (persists) -------------------------- */
-function applyGameResultToTeams(homeTeamNum, awayTeamNum, homeScore, awayScore, wentToOT) {
+function applyGameResultToTeams(homeTeamNum, awayTeamNum, homeScore, awayScore) {
   const homeTeamIndex = homeTeamNum * 2;
   const awayTeamIndex = awayTeamNum * 2;
 
@@ -281,256 +236,385 @@ function applyGameResultToTeams(homeTeamNum, awayTeamNum, homeScore, awayScore, 
   homeTeamData[2] = homeWins + homeLosses === 0 ? ".000" : (homeWins / (homeWins + homeLosses)).toFixed(3);
   awayTeamData[2] = awayWins + awayLosses === 0 ? ".000" : (awayWins / (awayWins + awayLosses)).toFixed(3);
 
-  // persist snapshot so user can resume later
   saveAllTeamsToLocal();
 }
 
-/* -------------------------- season simulation flow (lightweight) -------------------------- */
-let seasonRunState = null;
+/* -------------------------- UI Management -------------------------- */
+function renderTeamsList() {
+  const teamsList = document.getElementById('teamsList');
+  if (!teamsList) return;
 
-function startSeasonSimulation(homeTeamNum, awayTeamNum, totalGames = 82) {
-  if (homeTeamNum === awayTeamNum) {
-    alert("Pick two different teams to simulate a season.");
+  teamsList.innerHTML = '';
+  
+  for (let i = 0; i < allTeams.length; i += 2) {
+    const teamName = allTeams[i];
+    const stats = allTeams[i + 1];
+    const teamNum = i / 2;
+
+    const li = document.createElement('li');
+    li.className = 'team-item';
+    
+    const infoDiv = document.createElement('div');
+    const nameSpan = document.createElement('div');
+    nameSpan.className = 'team-name';
+    nameSpan.textContent = teamName;
+    
+    const metaSpan = document.createElement('div');
+    metaSpan.className = 'team-meta';
+    metaSpan.textContent = `${stats[0]}-${stats[1]} (${stats[2]}) | Rating: ${stats[5]}`;
+    
+    infoDiv.appendChild(nameSpan);
+    infoDiv.appendChild(metaSpan);
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn danger';
+    removeBtn.textContent = 'Remove';
+    removeBtn.style.padding = '4px 8px';
+    removeBtn.style.fontSize = '12px';
+    removeBtn.onclick = () => removeTeam(teamNum);
+    
+    li.appendChild(infoDiv);
+    li.appendChild(removeBtn);
+    teamsList.appendChild(li);
+  }
+
+  updateTeamSelects();
+}
+
+function updateTeamSelects() {
+  const teamASelect = document.getElementById('teamASelect');
+  const teamBSelect = document.getElementById('teamBSelect');
+  
+  if (!teamASelect || !teamBSelect) return;
+
+  const currentA = teamASelect.value;
+  const currentB = teamBSelect.value;
+
+  teamASelect.innerHTML = '<option value="">-- Select Home Team --</option>';
+  teamBSelect.innerHTML = '<option value="">-- Select Away Team --</option>';
+
+  for (let i = 0; i < allTeams.length; i += 2) {
+    const teamName = allTeams[i];
+    const teamNum = i / 2;
+
+    const optionA = document.createElement('option');
+    optionA.value = teamNum;
+    optionA.textContent = teamName;
+    teamASelect.appendChild(optionA);
+
+    const optionB = document.createElement('option');
+    optionB.value = teamNum;
+    optionB.textContent = teamName;
+    teamBSelect.appendChild(optionB);
+  }
+
+  if (currentA !== null) teamASelect.value = currentA;
+  if (currentB !== null) teamBSelect.value = currentB;
+}
+
+function addTeam(name, rating) {
+  // Check if team already exists
+  for (let i = 0; i < allTeams.length; i += 2) {
+    if (allTeams[i].toLowerCase() === name.toLowerCase()) {
+      return false;
+    }
+  }
+
+  const stats = ["0", "0", ".000", "1.0", "1.0", rating.toString()];
+  allTeams.push(name, stats);
+  
+  saveAllTeamsToLocal();
+  renderTeamsList();
+  updateStandings();
+  return true;
+}
+
+function removeTeam(teamNum) {
+  const index = teamNum * 2;
+  allTeams.splice(index, 2);
+  
+  saveAllTeamsToLocal();
+  renderTeamsList();
+  updateStandings();
+}
+
+/* -------------------------- Standings Display -------------------------- */
+function updateStandings() {
+  const standingsList = document.getElementById('standingsList');
+  if (!standingsList) return;
+
+  if (allTeams.length === 0) {
+    standingsList.innerHTML = '<div style="color: var(--muted); padding: 12px; text-align: center;">No teams added yet</div>';
     return;
   }
+
+  const teams = [];
+  for (let i = 0; i < allTeams.length; i += 2) {
+    const name = allTeams[i];
+    const stats = allTeams[i + 1];
+    teams.push({
+      name,
+      wins: parseInt(stats[0]),
+      losses: parseInt(stats[1]),
+      winPct: parseFloat(stats[2]),
+      rating: parseFloat(stats[5])
+    });
+  }
+
+  teams.sort((a, b) => b.winPct - a.winPct || b.wins - a.wins);
+
+  let html = '';
+  teams.forEach((team, index) => {
+    html += `
+      <div class="standings-row">
+        <div><strong>${index + 1}. ${team.name}</strong></div>
+        <div style="color: var(--muted)">${team.wins}-${team.losses} (${team.winPct.toFixed(3)})</div>
+      </div>
+    `;
+  });
+
+  standingsList.innerHTML = html;
+}
+
+function showStandingsModal() {
+  const modal = document.getElementById('standingsModal');
+  const modalList = document.getElementById('modalStandingsList');
+  
+  if (!modal || !modalList) return;
+
+  if (allTeams.length === 0) {
+    modalList.innerHTML = '<div style="color: var(--muted); padding: 12px; text-align: center;">No teams added yet</div>';
+  } else {
+    const eastTeams = [
+      "Atlanta Hawks", "Boston Celtics", "Brooklyn Nets", "Charlotte Hornets", "Chicago Bulls",
+      "Cleveland Caviliers", "Detroit Pistons", "Indiana Pacers", "Miami Heat", "Milwaukee Bucks",
+      "New York Knicks", "Orlando Magic", "Philadelphia 76ers", "Toronto Raptors", "Washington Wizards"
+    ];
+
+    const eastStandings = [];
+    const westStandings = [];
+
+    for (let i = 0; i < allTeams.length; i += 2) {
+      const name = allTeams[i];
+      const stats = allTeams[i + 1];
+      const obj = {
+        name,
+        wins: stats[0],
+        losses: stats[1],
+        winPct: parseFloat(stats[2]),
+        logo: teamImage[i / 2]
+      };
+      
+      if (eastTeams.includes(name)) {
+        eastStandings.push(obj);
+      } else {
+        westStandings.push(obj);
+      }
+    }
+
+    eastStandings.sort((a, b) => b.winPct - a.winPct);
+    westStandings.sort((a, b) => b.winPct - a.winPct);
+
+    let html = '';
+    
+    if (eastStandings.length > 0) {
+      html += '<h4 style="margin-top: 0;">Eastern Conference</h4>';
+      eastStandings.forEach((team, i) => {
+        html += `
+          <div class="standings-row">
+            <div><strong>${i + 1}. ${team.name}</strong></div>
+            <div style="color: var(--muted)">${team.wins}-${team.losses} (${team.winPct.toFixed(3)})</div>
+          </div>
+        `;
+      });
+    }
+
+    if (westStandings.length > 0) {
+      html += '<h4 style="margin-top: 16px;">Western Conference</h4>';
+      westStandings.forEach((team, i) => {
+        html += `
+          <div class="standings-row">
+            <div><strong>${i + 1}. ${team.name}</strong></div>
+            <div style="color: var(--muted)">${team.wins}-${team.losses} (${team.winPct.toFixed(3)})</div>
+          </div>
+        `;
+      });
+    }
+
+    modalList.innerHTML = html;
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function hideStandingsModal() {
+  const modal = document.getElementById('standingsModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+/* -------------------------- Game Simulation -------------------------- */
+function simulateGame() {
+  const teamASelect = document.getElementById('teamASelect');
+  const teamBSelect = document.getElementById('teamBSelect');
+  const lastResult = document.getElementById('lastResult');
+
+  if (!teamASelect || !teamBSelect || !lastResult) return;
+
+  const homeTeamNum = parseInt(teamASelect.value);
+  const awayTeamNum = parseInt(teamBSelect.value);
+
+  if (isNaN(homeTeamNum) || isNaN(awayTeamNum)) {
+    lastResult.innerHTML = '<div style="color: var(--danger);">Please select both teams</div>';
+    lastResult.classList.remove('hidden');
+    return;
+  }
+
+  if (homeTeamNum === awayTeamNum) {
+    lastResult.innerHTML = '<div style="color: var(--danger);">Please select two different teams</div>';
+    lastResult.classList.remove('hidden');
+    return;
+  }
+
+  const result = generateGameScoresByTeamNumber(homeTeamNum, awayTeamNum);
+  applyGameResultToTeams(homeTeamNum, awayTeamNum, result.homeScore, result.awayScore);
+
+  const homeTeamName = allTeams[homeTeamNum * 2];
+  const awayTeamName = allTeams[awayTeamNum * 2];
+  const winner = result.homeScore > result.awayScore ? homeTeamName : awayTeamName;
+  const otText = result.wentToOT ? ' (OT)' : '';
+
+  lastResult.innerHTML = `
+    <div style="text-align: center;">
+      <h3 style="margin: 0 0 8px 0;">Final Score${otText}</h3>
+      <div style="display: flex; justify-content: space-around; align-items: center; margin: 12px 0;">
+        <div>
+          <div style="font-weight: 700; font-size: 16px;">${homeTeamName}</div>
+          <div style="font-size: 32px; font-weight: 900; color: ${result.homeScore > result.awayScore ? 'var(--success)' : 'var(--muted)'};">${result.homeScore}</div>
+        </div>
+        <div style="font-size: 24px; color: var(--muted);">-</div>
+        <div>
+          <div style="font-weight: 700; font-size: 16px;">${awayTeamName}</div>
+          <div style="font-size: 32px; font-weight: 900; color: ${result.awayScore > result.homeScore ? 'var(--success)' : 'var(--muted)'};">${result.awayScore}</div>
+        </div>
+      </div>
+      <div style="margin-top: 8px; color: var(--muted);">${winner} wins!</div>
+    </div>
+  `;
+  lastResult.classList.remove('hidden');
+
+  updateStandings();
+}
+
+/* -------------------------- Season Simulation -------------------------- */
+let seasonRunState = null;
+
+function startSeasonSimulation() {
+  const teamASelect = document.getElementById('teamASelect');
+  const teamBSelect = document.getElementById('teamBSelect');
+
+  if (!teamASelect || !teamBSelect) return;
+
+  const homeTeamNum = parseInt(teamASelect.value);
+  const awayTeamNum = parseInt(teamBSelect.value);
+
+  if (isNaN(homeTeamNum) || isNaN(awayTeamNum)) {
+    showSeasonModal('Please select both teams', '', false);
+    return;
+  }
+
+  if (homeTeamNum === awayTeamNum) {
+    showSeasonModal('Please select two different teams', '', false);
+    return;
+  }
+
   seasonRunState = {
     homeTeamNum,
     awayTeamNum,
-    currentGame: 1,
-    totalGames,
+    currentGame: 0,
+    totalGames: 82,
     isRunning: true
   };
 
-  resultsPage.hidden = false;
-  canvas.hidden = true;
-
-  let seasonControls = document.getElementById("seasonControlsContainer");
-  if (!seasonControls) {
-    seasonControls = document.createElement("div");
-    seasonControls.id = "seasonControlsContainer";
-    seasonControls.style.marginTop = "12px";
-    resultsPage.appendChild(seasonControls);
-  }
-  seasonControls.innerHTML = "";
-
-  renderSeasonPreview();
-
-  const continueBtn = document.createElement("button");
-  continueBtn.textContent = "Continue";
-  continueBtn.className = "btn";
-  continueBtn.style.marginRight = "8px";
-  continueBtn.onclick = () => continueSeasonSimulation();
-
-  const standingsBtn = document.createElement("button");
-  standingsBtn.textContent = "Standings";
-  standingsBtn.className = "btn";
-  standingsBtn.style.marginRight = "8px";
-  standingsBtn.onclick = () => {
-    standings();
-    const backBtn = document.createElement("button");
-    backBtn.className = "btn";
-    backBtn.textContent = "Back to Season";
-    backBtn.style.display = "block";
-    backBtn.style.margin = "12px auto";
-    backBtn.onclick = () => {
-      startPage.hidden = true;
-      standingsPage.hidden = true;
-      resultsPage.hidden = false;
-      renderSeasonPreview();
-    };
-    const existingBack = document.getElementById("backToSeasonBtn");
-    if (existingBack) existingBack.remove();
-    backBtn.id = "backToSeasonBtn";
-    standingsPage.appendChild(backBtn);
-  };
-
-  const endBtn = document.createElement("button");
-  endBtn.textContent = "End";
-  endBtn.className = "btn danger";
-  endBtn.onclick = () => endSeasonSimulation();
-
-  seasonControls.appendChild(continueBtn);
-  seasonControls.appendChild(standingsBtn);
-  seasonControls.appendChild(endBtn);
+  simulateNextSeasonGame();
 }
 
-function renderSeasonPreview() {
-  if (!seasonRunState) return;
-  const homeNum = seasonRunState.homeTeamNum;
-  const awayNum = seasonRunState.awayTeamNum;
-  const preview = generateGameScoresByTeamNumber(homeNum, awayNum);
-
-  const titleEl = resultsPage.querySelector("h1") || document.createElement("h1");
-  titleEl.className = "pageTitle";
-  titleEl.textContent = `Season Sim — Game ${seasonRunState.currentGame} / ${seasonRunState.totalGames}`;
-  if (!resultsPage.querySelector("h1")) resultsPage.prepend(titleEl);
-
-  const homeSection = document.getElementById("homeScore");
-  const awaySection = document.getElementById("awayScore");
-  if (homeSection && awaySection) {
-    awaySection.querySelectorAll("h3")[0].textContent = allTeams[awayNum * 2];
-    homeSection.querySelectorAll("h3")[0].textContent = allTeams[homeNum * 2];
-    const homeImg = homeSection.querySelector("img");
-    const awayImg = awaySection.querySelector("img");
-    if (homeImg) homeImg.src = teamImage[homeNum];
-    if (awayImg) awayImg.src = teamImage[awayNum];
-    awaySection.querySelectorAll("h3")[1].textContent = preview.awayScore;
-    homeSection.querySelectorAll("h3")[1].textContent = preview.homeScore;
-    winnerArrow.innerText = preview.homeScore > preview.awayScore ? "Preview >" : "< Preview";
-  } else {
-    let previewBlock = document.getElementById("seasonPreviewBlock");
-    if (!previewBlock) {
-      previewBlock = document.createElement("div");
-      previewBlock.id = "seasonPreviewBlock";
-      previewBlock.style.marginTop = "12px";
-      resultsPage.appendChild(previewBlock);
-    }
-    previewBlock.innerHTML = `<div style="font-weight:800">${allTeams[homeNum*2]} ${preview.homeScore} — ${preview.awayScore} ${allTeams[awayNum*2]}</div>
-      <div style="color:gray;margin-top:6px">${preview.homeScore > preview.awayScore ? allTeams[homeNum*2] + ' leads' : allTeams[awayNum*2] + ' leads'}</div>`;
-  }
-}
-
-function continueSeasonSimulation() {
+function simulateNextSeasonGame() {
   if (!seasonRunState || !seasonRunState.isRunning) return;
-  const homeNum = seasonRunState.homeTeamNum;
-  const awayNum = seasonRunState.awayTeamNum;
 
-  const { homeScore, awayScore, wentToOT } = generateGameScoresByTeamNumber(homeNum, awayNum);
-  applyGameResultToTeams(homeNum, awayNum, homeScore, awayScore, wentToOT);
+  seasonRunState.currentGame++;
 
-  const homeSection = document.getElementById("homeScore");
-  const awaySection = document.getElementById("awayScore");
-  if (homeSection && awaySection) {
-    awaySection.querySelectorAll("h3")[1].textContent = awayScore;
-    homeSection.querySelectorAll("h3")[1].textContent = homeScore;
-    winnerArrow.innerText = wentToOT ? (homeScore > awayScore ? "Final/OT >" : "< Final/OT") : (homeScore > awayScore ? "Final >" : "< Final");
-  } else {
-    const previewBlock = document.getElementById("seasonPreviewBlock");
-    if (previewBlock) {
-      previewBlock.innerHTML = `<div style="font-weight:900">Game ${seasonRunState.currentGame} / ${seasonRunState.totalGames}</div>
-        <div style="margin-top:6px">${allTeams[homeNum*2]} ${homeScore} — ${awayScore} ${allTeams[awayNum*2]}</div>
-        <div style="margin-top:8px;color:gray">${homeScore > awayScore ? allTeams[homeNum*2] : allTeams[awayNum*2]} wins!</div>`;
-    }
-  }
+  const result = generateGameScoresByTeamNumber(seasonRunState.homeTeamNum, seasonRunState.awayTeamNum);
+  applyGameResultToTeams(seasonRunState.homeTeamNum, seasonRunState.awayTeamNum, result.homeScore, result.awayScore);
 
-  if (seasonRunState.currentGame >= seasonRunState.totalGames) {
+  const homeTeamName = allTeams[seasonRunState.homeTeamNum * 2];
+  const awayTeamName = allTeams[seasonRunState.awayTeamNum * 2];
+  const winner = result.homeScore > result.awayScore ? homeTeamName : awayTeamName;
+  const otText = result.wentToOT ? ' (OT)' : '';
+
+  const title = `Game ${seasonRunState.currentGame} of ${seasonRunState.totalGames}`;
+  const body = `
+    <div style="display: flex; justify-content: space-around; align-items: center; margin: 12px 0;">
+      <div>
+        <div style="font-weight: 700;">${homeTeamName}</div>
+        <div style="font-size: 28px; font-weight: 900; color: ${result.homeScore > result.awayScore ? 'var(--success)' : 'var(--muted)'};">${result.homeScore}</div>
+      </div>
+      <div style="font-size: 20px; color: var(--muted);">-</div>
+      <div>
+        <div style="font-weight: 700;">${awayTeamName}</div>
+        <div style="font-size: 28px; font-weight: 900; color: ${result.awayScore > result.homeScore ? 'var(--success)' : 'var(--muted)'};">${result.awayScore}</div>
+      </div>
+    </div>
+    <div style="margin-top: 8px; color: var(--muted);">${winner} wins${otText}</div>
+  `;
+
+  const isLastGame = seasonRunState.currentGame >= seasonRunState.totalGames;
+  showSeasonModal(title, body, !isLastGame);
+
+  if (isLastGame) {
     seasonRunState.isRunning = false;
-    alert(`Season completed: simulated ${seasonRunState.totalGames} games.`);
-  } else {
-    seasonRunState.currentGame++;
-    setTimeout(() => renderSeasonPreview(), 250);
   }
 
-  if (!document.getElementById('standingsModal') || document.getElementById('standingsModal').classList.contains('hidden')) {
-    // do nothing
-  } else {
-    renderModalStandings();
-  }
+  updateStandings();
 }
 
-function endSeasonSimulation() {
+function showSeasonModal(title, body, showContinue) {
+  const modal = document.getElementById('seasonModal');
+  const titleEl = document.getElementById('seasonTitle');
+  const gameCard = document.getElementById('seasonGameCard');
+  const continueBtn = document.getElementById('seasonContinue');
+
+  if (!modal || !titleEl || !gameCard || !continueBtn) return;
+
+  titleEl.textContent = title;
+  gameCard.innerHTML = body;
+  
+  if (showContinue) {
+    continueBtn.style.display = 'inline-block';
+  } else {
+    continueBtn.style.display = 'none';
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function hideSeasonModal() {
+  const modal = document.getElementById('seasonModal');
+  if (modal) modal.classList.add('hidden');
   seasonRunState = null;
-  const previewBlock = document.getElementById("seasonPreviewBlock");
-  if (previewBlock) previewBlock.remove();
-  const seasonControls = document.getElementById("seasonControlsContainer");
-  if (seasonControls) seasonControls.remove();
-  alert("Season simulation ended. You can save progress with your Save button.");
 }
 
-/* -------------------------- original simFinalScore kept (also persists) -------------------------- */
-function simFinalScore() {
-  // ... (we keep original implementation) ...
-  // (The original function body remains unchanged; for brevity in this block we rely on the original file's function code.)
-  // After updating records in that function, ensure we persist:
-  try { localStorage.setItem(ALL_TEAMS_KEY, JSON.stringify(allTeams)); } catch (e) { /* ignore */ }
+function showSeasonStandings() {
+  showStandingsModal();
 }
 
-/* -------------------------- animations & other functions unchanged -------------------------- */
-/* (All original animation functions retain their bodies: eraseScreenAnimation, flashTeamImage, drawSimAnimation, etc.) */
-
-/* -------------------------- login / save / reset (augmented persistence) -------------------------- */
-const errorMess = document.getElementById("errorMess"); 
-
-function simulate() {
-    animationValue = 5;
-    homeValue = 0;
-    awayValue = 0;
-    errorMess.innerText = "";
-    const getHomeTeam = document.getElementById("homeTeam");
-    const getAwayTeam = document.getElementById("awayTeam");
-    const awayTeam = getAwayTeam.value;
-    const homeTeam = getHomeTeam.value;
-    if (awayTeam == homeTeam) {
-        errorMess.innerText = "Please enter two different teams.";
-    } else if (homeTeam == "invalid1" || awayTeam == "invalid") {
-        errorMess.innerText = "Please enter the teams to simulate.";
-    } else {
-      simScorePage.hidden = true;
-      canvas.hidden = false;
-      drawSimAnimation();
-    }
-}
-
-function startLogin() {
-    homePage.hidden = true;
-    loginPage.hidden = false;
-}
-
-function login() {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const messageDiv = document.getElementById('message');
-
-    if (!username || !password) {
-        messageDiv.innerText = "Please enter both username and password.";
-        return;
-    }
-
-    let users = JSON.parse(localStorage.getItem("users") || "[]");
-
-    let existingUser = users.find(user => user.username === username);
-    let passwordUsed = users.find(user => user.password === password && user.username !== username);
-
-    if (existingUser) {
-        if (existingUser.password !== password) {
-          messageDiv.innerText = "Incorrect password.";
-          return;
-        } else {
-          messageDiv.innerText = "Login successful!";
-          allTeams = existingUser.teamData;
-          currentUser = existingUser.username;
-          try { localStorage.setItem(ALL_TEAMS_KEY, JSON.stringify(allTeams)); } catch (e) {}
-          document.getElementById('loginDiv').style.display = 'none';
-          startGame();
-          document.getElementById('saveButton').style.display = 'block';
-        }
-    } else {
-        if (passwordUsed) {
-          messageDiv.innerText = "This password is already used by another account.";
-          return;
-        }
-        // Register new user
-        const newUser = {
-          username: username,
-          password: password,
-          teamData: JSON.parse(JSON.stringify(defaultAllTeams)) // Deep copy
-        };
-        users.push(newUser);
-        localStorage.setItem("users", JSON.stringify(users));
-        allTeams = newUser.teamData;
-        // Generate systematic random ratings for the new user's teams
-        determineTeamStrength();
-        currentUser = newUser.username;
-        messageDiv.innerText = "New user registered!";
-        saveUserData(); // will persist both users and allTeams
-        document.getElementById('loginDiv').style.display = 'none';
-        startGame();
-        document.getElementById('saveButton').style.display = 'block';
-    } 
-}
-
+/* -------------------------- Save/Load User Data -------------------------- */
 function saveUserData() {
-  if (!currentUser) return;
+  if (!currentUser) {
+    // Anonymous save
+    saveAllTeamsToLocal();
+    showNotification('Progress saved locally!');
+    return;
+  }
 
   let users = JSON.parse(localStorage.getItem("users") || "[]");
   let userIndex = users.findIndex(u => u.username === currentUser);
@@ -538,161 +622,167 @@ function saveUserData() {
   if (userIndex !== -1) {
     users[userIndex].teamData = allTeams;
     localStorage.setItem("users", JSON.stringify(users));
-    // also persist a quick snapshot for resume
     saveAllTeamsToLocal();
-    alert("Progress Saved");
+    showNotification('User data saved!');
   } else {
-    alert("User not found");
-  } 
-}
- 
-function resetUser() {
-  alert("User Reset");
-  allTeams = JSON.parse(JSON.stringify(defaultAllTeams));
-  determineTeamStrength();
-  saveUserData();
+    showNotification('User not found');
+  }
 }
 
-/* -------------------------- standings & helpers unchanged (keeps using allTeams) -------------------------- */
-function standings() {
-  standingsPage.hidden = false;
-  resultsPage.hidden = true;
-  startPage.hidden = true;
-  simButton.hidden = false;
-  simScorePage.hidden = true;
+function loadUserData() {
+  const username = prompt('Enter username to load:');
+  if (!username) return;
 
-  standingsPage.innerHTML = "<h1 class='pageTitle'>Standings</h1>";
+  let users = JSON.parse(localStorage.getItem("users") || "[]");
+  let user = users.find(u => u.username === username);
 
-  const eastTeams = [
-    "Atlanta Hawks", "Boston Celtics", "Brooklyn Nets", "Charlotte Hornets", "Chicago Bulls",
-    "Cleveland Caviliers", "Detroit Pistons", "Indiana Pacers", "Miami Heat", "Milwaukee Bucks",
-    "New York Knicks", "Orlando Magic", "Philadelphia 76ers", "Toronto Raptors", "Washington Wizards"
-  ];
-
-  const eastStandings = [];
-  const westStandings = [];
-
-  for (let i = 0; i < allTeams.length; i += 2) {
-    const name = allTeams[i];
-    const stats = allTeams[i + 1];
-    const obj = {
-      name,
-      wins: stats[0],
-      losses: stats[1],
-      winPct: parseFloat(stats[2]),
-      offense: parseFloat(stats[3]),
-      defense: parseFloat(stats[4]),
-      overall: parseFloat(stats[5]),
-      logo: teamImage[i / 2]
-    };
-    if (eastTeams.includes(name)) {
-      eastStandings.push(obj);
-    } else {
-      westStandings.push(obj);
+  if (user) {
+    allTeams = user.teamData || JSON.parse(JSON.stringify(defaultAllTeams));
+    currentUser = username;
+    saveAllTeamsToLocal();
+    renderTeamsList();
+    updateStandings();
+    showNotification(`Loaded data for ${username}`);
+  } else {
+    // Create new user
+    const createNew = confirm(`User "${username}" not found. Create new user?`);
+    if (createNew) {
+      currentUser = username;
+      allTeams = JSON.parse(JSON.stringify(defaultAllTeams));
+      determineTeamStrength();
+      
+      users.push({
+        username: username,
+        password: '',
+        teamData: allTeams
+      });
+      localStorage.setItem("users", JSON.stringify(users));
+      
+      renderTeamsList();
+      updateStandings();
+      showNotification(`Created new user: ${username}`);
     }
   }
-
-  eastStandings.sort((a, b) => b.winPct - a.winPct);
-  westStandings.sort((a, b) => b.winPct - a.winPct);
-
-  standingsPage.appendChild(buildStandingsTable("Eastern Conference", eastStandings));
-  standingsPage.appendChild(buildStandingsTable("Western Conference", westStandings));
 }
 
-function buildStandingsTable(title, standings) {
-  const container = document.createElement("div");
-
-  const heading = document.createElement("h2");
-  heading.textContent = title;
-  heading.style.textAlign = "center";
-  container.appendChild(heading);
-
-  const table = document.createElement("table");
-  table.style.margin = "0 auto";
-  table.style.borderCollapse = "collapse";
-  table.style.marginBottom = "24px";
-
-  const thead = document.createElement("thead");
-  const headerRow = document.createElement("tr");
-  const headers = ["Rank", "Team", "Wins |", "Losses |", "Win % |", "Offense |", "Defense |", "Overall |"];
-  for (const h of headers) {
-    const th = document.createElement("th");
-    th.textContent = h;
-    headerRow.appendChild(th);
-  }
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
-
-  const tbody = document.createElement("tbody");
-
-  for (let i = 0; i < standings.length; i++) {
-    const team = standings[i];
-    const row = document.createElement("tr");
-
-    const rankTd = document.createElement("td");
-    rankTd.textContent = i + 1;
-
-    const teamTd = document.createElement("td");
-    teamTd.style.display = "flex";
-    teamTd.style.alignItems = "center";
-    teamTd.style.gap = "8px";
-
-    const logo = document.createElement("img");
-    logo.src = team.logo;
-    logo.style.width = "30px";
-    logo.style.height = "30px";
-    logo.style.objectFit = "contain";
-
-    const nameSpan = document.createElement("span");
-    nameSpan.textContent = team.name;
-
-    teamTd.appendChild(logo);
-    teamTd.appendChild(nameSpan);
-
-    const data = [
-      rankTd,
-      teamTd,
-      createCell(team.wins),
-      createCell(team.losses),
-      createCell(team.winPct.toFixed(3)),
-      createCell(team.offense.toFixed(2)),
-      createCell(team.defense.toFixed(2)),
-      createCell(team.overall.toFixed(2))
-    ];
-
-    for (const cell of data) {
-      cell.style.padding = "8px 12px";
-      cell.style.borderBottom = "1px solid #ccc";
-      if (i === 5) {
-        cell.style.borderBottom = "3px dashed black";
-      } else if (i === 9) {
-        cell.style.borderBottom = "3px solid black";
-      }
-
-      row.appendChild(cell);
-    }
-
-    tbody.appendChild(row);
-  }
-
-  table.appendChild(tbody);
-  container.appendChild(table);
-  return container;
+function showNotification(message) {
+  // Simple notification - could be enhanced
+  const notif = document.createElement('div');
+  notif.style.position = 'fixed';
+  notif.style.top = '20px';
+  notif.style.right = '20px';
+  notif.style.background = 'var(--accent)';
+  notif.style.color = 'white';
+  notif.style.padding = '12px 20px';
+  notif.style.borderRadius = '8px';
+  notif.style.zIndex = '1000';
+  notif.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+  notif.textContent = message;
+  
+  document.body.appendChild(notif);
+  
+  setTimeout(() => {
+    notif.style.transition = 'opacity 0.3s';
+    notif.style.opacity = '0';
+    setTimeout(() => notif.remove(), 300);
+  }, 2000);
 }
 
-function createCell(text) {
-  const td = document.createElement("td");
-  td.textContent = text;
-  return td;
-}
-
-/* -------------------------- initialize allTeams on app load -------------------------- */
-(function initApp() {
-  // If a per-user 'users' snapshot exists and we have a current user later, login will override.
-  // For anonymous or first-time visitors, create a randomized default allTeams once and persist it.
+/* -------------------------- Event Listeners -------------------------- */
+function initializeApp() {
+  // Load teams from localStorage or use defaults
   const loaded = loadAllTeamsFromLocal();
   if (!loaded) {
-    allTeams = JSON.parse(JSON.stringify(defaultAllTeams)); // deep copy
-    determineTeamStrength(); // assigns offense/def/overall to allTeams and persists
+    allTeams = JSON.parse(JSON.stringify(defaultAllTeams));
+    determineTeamStrength();
   }
-})();
+
+  renderTeamsList();
+  updateStandings();
+
+  // Add Team Form
+  const addTeamForm = document.getElementById('addTeamForm');
+  if (addTeamForm) {
+    addTeamForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nameInput = document.getElementById('teamNameInput');
+      const ratingInput = document.getElementById('teamRatingInput');
+      
+      const name = nameInput.value.trim();
+      const rating = parseInt(ratingInput.value) || 100;
+
+      if (!name) return;
+
+      const success = addTeam(name, rating);
+      if (success) {
+        nameInput.value = '';
+        ratingInput.value = '100';
+      } else {
+        showNotification('Team already exists!');
+      }
+    });
+  }
+
+  // Simulate Game Button
+  const simulateBtn = document.getElementById('simulateBtn');
+  if (simulateBtn) {
+    simulateBtn.addEventListener('click', simulateGame);
+  }
+
+  // Simulate Season Button
+  const simulateSeasonBtn = document.getElementById('simulateSeasonBtn');
+  if (simulateSeasonBtn) {
+    simulateSeasonBtn.addEventListener('click', startSeasonSimulation);
+  }
+
+  // Save User Button
+  const saveUserBtn = document.getElementById('saveUser');
+  if (saveUserBtn) {
+    saveUserBtn.addEventListener('click', saveUserData);
+  }
+
+  // Load User Button
+  const loadUserBtn = document.getElementById('loadUser');
+  if (loadUserBtn) {
+    loadUserBtn.addEventListener('click', loadUserData);
+  }
+
+  // Season Modal Controls
+  const seasonContinue = document.getElementById('seasonContinue');
+  if (seasonContinue) {
+    seasonContinue.addEventListener('click', simulateNextSeasonGame);
+  }
+
+  const seasonStandings = document.getElementById('seasonStandings');
+  if (seasonStandings) {
+    seasonStandings.addEventListener('click', showSeasonStandings);
+  }
+
+  const seasonEnd = document.getElementById('seasonEnd');
+  if (seasonEnd) {
+    seasonEnd.addEventListener('click', hideSeasonModal);
+  }
+
+  const seasonClose = document.getElementById('seasonClose');
+  if (seasonClose) {
+    seasonClose.addEventListener('click', hideSeasonModal);
+  }
+
+  // Standings Modal Controls
+  const standingsClose = document.getElementById('standingsClose');
+  if (standingsClose) {
+    standingsClose.addEventListener('click', hideStandingsModal);
+  }
+
+  const closeStandingsBtn = document.getElementById('closeStandingsBtn');
+  if (closeStandingsBtn) {
+    closeStandingsBtn.addEventListener('click', hideStandingsModal);
+  }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+  initializeApp();
+}
