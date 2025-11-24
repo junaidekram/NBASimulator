@@ -37,6 +37,7 @@ body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI"
 .modal.hidden{display:none}
 .modal-content{background:var(--card);padding:18px;border-radius:12px;min-width:420px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(2,6,23,0.6)}
 .modal-content.small{min-width:320px;}
+.modal-content.large{min-width:800px;max-width:95vw;}
 .modal-close{position:absolute;margin-left:10px;margin-top:-10px;background:transparent;border:none;color:#fff;font-size:28px;cursor:pointer}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .footer{padding:18px;text-align:center;color:var(--muted);font-size:13px;margin-top:18px}
@@ -46,6 +47,8 @@ body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI"
 .standings-table th{text-align:left;padding:8px 6px;color:var(--muted);font-size:12px;border-bottom:1px solid rgba(255,255,255,0.06)}
 .standings-table td{padding:8px 6px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.02)}
 .standings-table tbody tr:hover{background:rgba(255,255,255,0.02)}
+.standings-table tbody tr.playoff-line{border-bottom:2px dashed rgba(139,92,246,0.5)}
+.standings-table tbody tr.playin-line{border-bottom:2px solid rgba(139,92,246,0.5)}
 .full-width{grid-column:1/-1}
 .modal-standings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .modal-conference h4{margin-top:0;margin-bottom:12px;color:var(--accent)}
