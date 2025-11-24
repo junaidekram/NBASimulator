@@ -11,29 +11,14 @@
     <div class="container">
       <h1>NBA Simulator</h1>
       <div class="actions">
-        <button id="saveUser" class="btn primary">Save User</button>
-        <button id="loadUser" class="btn">Load User</button>
+        <button id="resetSeason" class="btn">Reset Season</button>
+        <button id="saveUser" class="btn primary">Save Progress</button>
       </div>
     </div>
   </header>
 
   <main class="container main-grid">
-    <section class="panel teams-panel">
-      <h2>Teams</h2>
-      <form id="addTeamForm" class="add-team">
-        <input id="teamNameInput" placeholder="Team name (e.g. Lakers)" required />
-        <input id="teamRatingInput" type="number" min="50" max="150" value="100" />
-        <button class="btn" type="submit">Add Team</button>
-      </form>
-
-      <ul id="teamsList" class="teams-list"></ul>
-
-      <div class="legend">
-        <small>Tip: Add at least two teams, then pick them in the simulator.</small>
-      </div>
-    </section>
-
-    <section class="panel sim-panel">
+    <section class="panel sim-panel full-width">
       <h2>Simulator</h2>
 
       <div class="sim-controls">
@@ -51,15 +36,57 @@
       </div>
 
       <div id="lastResult" class="result-card hidden"></div>
+    </section>
 
-      <div class="standings-card">
-        <h3>Standings</h3>
-        <div id="standingsList"></div>
+    <section class="panel standings-panel full-width">
+      <h2>Standings</h2>
+      
+      <div class="conference-container">
+        <div class="conference">
+          <h3>Eastern Conference</h3>
+          <div class="standings-table-wrapper">
+            <table class="standings-table">
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th>W</th>
+                  <th>L</th>
+                  <th>Pct</th>
+                  <th>Off Rtg</th>
+                  <th>Def Rtg</th>
+                  <th>Overall Rtg</th>
+                </tr>
+              </thead>
+              <tbody id="easternStandingsBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="conference">
+          <h3>Western Conference</h3>
+          <div class="standings-table-wrapper">
+            <table class="standings-table">
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th>W</th>
+                  <th>L</th>
+                  <th>Pct</th>
+                  <th>Off Rtg</th>
+                  <th>Def Rtg</th>
+                  <th>Overall Rtg</th>
+                </tr>
+              </thead>
+              <tbody id="westernStandingsBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- Season Modal -->
   <div id="seasonModal" class="modal hidden">
     <div class="modal-content">
       <button class="modal-close" id="seasonClose">×</button>
@@ -75,18 +102,52 @@
     </div>
   </div>
 
-  <!-- Standings Modal -->
   <div id="standingsModal" class="modal hidden">
-    <div class="modal-content small">
+    <div class="modal-content large">
       <button class="modal-close" id="standingsClose">×</button>
-      <h3>Standings</h3>
-      <div id="modalStandingsList"></div>
+      <h3>Season Standings</h3>
+      <div class="modal-standings-grid">
+        <div class="modal-conference">
+          <h4>Eastern Conference</h4>
+          <table class="standings-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>W</th>
+                <th>L</th>
+                <th>Pct</th>
+                <th>Off Rtg</th>
+                <th>Def Rtg</th>
+                <th>Overall Rtg</th>
+              </tr>
+            </thead>
+            <tbody id="modalEasternStandingsBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-conference">
+          <h4>Western Conference</h4>
+          <table class="standings-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>W</th>
+                <th>L</th>
+                <th>Pct</th>
+                <th>Off Rtg</th>
+                <th>Def Rtg</th>
+                <th>Overall Rtg</th>
+              </tr>
+            </thead>
+            <tbody id="modalWesternStandingsBody"></tbody>
+          </table>
+        </div>
+      </div>
       <div style="text-align:right;margin-top:12px;"><button id="closeStandingsBtn" class="btn">Close</button></div>
     </div>
   </div>
 
   <footer class="footer">
-    <div class="container">Built with ❤️ — Redesigned UI + Season Simulation</div>
+    <div class="container">Built with ❤️ — 30 NBA Teams with Auto-Generated Ratings</div>
   </footer>
 
   <script src="script.js"></script>
