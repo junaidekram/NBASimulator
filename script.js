@@ -173,8 +173,6 @@ const sports = {
     teams: createTeamArray(nflTeams),
     logos: nflTeamImage,
     games: 17,
-    scoreBase: 14,
-    scoreRange: 24,
     maxMatchups: 2,
     storageKey: "nflAllTeams"
   }
@@ -269,7 +267,97 @@ function determineTeamStrength() {
 }
 
 /* -------------------------- game score generation (extracted) -------------------------- */
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function randomInteger(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateNFLTeamScore(teamIndex, opponentIndex, isHome, gamePace) {
+  const teamStats = allTeams[teamIndex * 2 + 1];
+  const opponentStats = allTeams[opponentIndex * 2 + 1];
+  const teamStrength = parseFloat(teamStats[5]) || 0;
+  const opponentStrength = parseFloat(opponentStats[5]) || 0;
+  const offense = parseFloat(teamStats[3]) || 1;
+  const opponentDefense = parseFloat(opponentStats[4]) || 1;
+
+  // NFL scoring is driven by a limited number of possessions. Each drive
+  // creates natural swings between shutouts, field goals, and touchdowns.
+  const possessions = randomInteger(9, 13) + (gamePace > 1.08 ? 1 : 0);
+  const matchupQuality = clamp(
+    1 +
+      teamStrength * 0.022 +
+      (offense - 1) * 1.8 +
+      (1 - opponentDefense) * 1.8 +
+      (teamStrength - opponentStrength) * 0.006 +
+      (isHome ? 0.045 : 0),
+    0.72,
+    1.32
+  );
+  const scoringEnvironment = clamp(gamePace * matchupQuality, 0.68, 1.42);
+  const touchdownChance = clamp(0.18 * scoringEnvironment, 0.1, 0.29);
+  const fieldGoalChance = clamp(0.15 * scoringEnvironment, 0.08, 0.24);
+  const safetyChance = clamp(0.012 * (2 - scoringEnvironment), 0.003, 0.025);
+
+  let score = 0;
+  for (let drive = 0; drive < possessions; drive++) {
+    const outcome = Math.random();
+    if (outcome < touchdownChance) {
+      // A missed extra point and occasional two-point conversion keep totals
+      // from becoming a repetitive sequence of sevens.
+      const conversion = Math.random();
+      score += conversion < 0.04 ? 6 : conversion > 0.985 ? 8 : 7;
+    } else if (outcome < touchdownChance + fieldGoalChance) {
+      score += Math.random() < 0.06 ? 0 : 3;
+    } else if (outcome > 1 - safetyChance) {
+      score += 2;
+    }
+  }
+
+  return score;
+}
+
+function generateNFLGameScores(homeTeamNum, awayTeamNum) {
+  const homeStrength = parseFloat(allTeams[homeTeamNum * 2 + 1][5]) || 0;
+  const awayStrength = parseFloat(allTeams[awayTeamNum * 2 + 1][5]) || 0;
+  const matchupVolatility = Math.random() * 0.28 + 0.88;
+  const pace = clamp(
+    matchupVolatility + (Math.random() - 0.5) * 0.18 + (homeStrength + awayStrength) * 0.004,
+    0.72,
+    1.28
+  );
+
+  let homeScore = generateNFLTeamScore(homeTeamNum, awayTeamNum, true, pace);
+  let awayScore = generateNFLTeamScore(awayTeamNum, homeTeamNum, false, pace);
+
+  // A low-scoring NFL game can be decided by a late field goal; avoid
+  // artificially shrinking legitimate blowouts.
+  if (homeScore === awayScore) {
+    const homeWinProbability = clamp(
+      0.5 + (homeStrength - awayStrength) * 0.025 + 0.035,
+      0.2,
+      0.8
+    );
+    const homeWinsOvertime = Math.random() < homeWinProbability;
+    const overtimeScore = Math.random() < 0.3 ? 3 : 7;
+    if (homeWinsOvertime) {
+      homeScore += overtimeScore;
+    } else {
+      awayScore += overtimeScore;
+    }
+    return { homeScore, awayScore, wentToOT: true };
+  }
+
+  return { homeScore, awayScore, wentToOT: false };
+}
+
 function generateGameScoresByTeamNumber(homeTeamNum, awayTeamNum) {
+  if (isNFL()) {
+    return generateNFLGameScores(homeTeamNum, awayTeamNum);
+  }
+
   const homeTeamIndex = homeTeamNum * 2;
   const awayTeamIndex = awayTeamNum * 2;
 
@@ -412,7 +500,8 @@ function getTeamGamesPlayed(teamIdx) {
   return parseInt(teamData[0]) + parseInt(teamData[1]);
 }
 
-// Find next best matchup - returns {homeIdx, awayIdx} or null if all teams at 82
+// Find next best matchup - returns {homeIdx, awayIdx} or null if all teams
+// have reached the active sport's regular-season game total.
 function findNextMatchup(matchupCounts) {
   const teamCount = getTeamCount();
   
@@ -707,7 +796,7 @@ function startSeasonSim() {
     return;
   }
   
-  // Calculate total games needed (each team plays 82 games, divide by 2 since each game involves 2 teams)
+  // Each game counts once for each team, so divide the total team games by 2.
   const totalGamesInSeason = (getTeamCount() * sportConfig.games) / 2;
   
   seasonRunState = {
