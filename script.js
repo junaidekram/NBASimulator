@@ -1,4 +1,4 @@
-/* script.js — NBA Simulator with 30 default teams
+/* script.js — NBA/NFL simulator
    - Auto-initializes 30 NBA teams with randomly generated ratings
    - Teams are split between Eastern and Western conferences
    - Ratings range from -7.50 to 7.50 with biased offensive/defensive ratings
@@ -8,6 +8,13 @@
 // Simulator controls
 const teamASelect = document.getElementById("teamASelect");
 const teamBSelect = document.getElementById("teamBSelect");
+const sportMode = document.getElementById("sportMode");
+const appTitle = document.getElementById("appTitle");
+const footerText = document.getElementById("footerText");
+const eastConferenceTitle = document.getElementById("eastConferenceTitle");
+const westConferenceTitle = document.getElementById("westConferenceTitle");
+const modalEastConferenceTitle = document.getElementById("modalEastConferenceTitle");
+const modalWestConferenceTitle = document.getElementById("modalWestConferenceTitle");
 const simulateBtn = document.getElementById("simulateBtn");
 const simulateSeasonBtn = document.getElementById("simulateSeasonBtn");
 const lastResult = document.getElementById("lastResult");
@@ -45,6 +52,8 @@ const resetSeason = document.getElementById("resetSeason");
 
 var allTeams = [];
 var defaultAllTeams = [];
+let activeSport = "NBA";
+let sportConfig;
 
 /* -------------------------- default teams -------------------------- */
 // teamArray structure: [name, [wins, losses, pct, offRating, defRating, overallRating, conference]]
@@ -86,7 +95,7 @@ defaultAllTeams = [
 
 /* -------------------------- styling assets (reordered by conference) -------------------------- */
 // Team logos reordered to match the team list (Eastern conference first, then Western)
-const teamImage = [
+let teamImage = [
   "https://a.espncdn.com/i/teamlogos/nba/500/atl.png", // Atlanta Hawks
   "https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/Boston_Celtics.svg/640px-Boston_Celtics.svg.png", // Boston Celtics
   "https://upload.wikimedia.org/wikipedia/en/thumb/4/40/Brooklyn_Nets_primary_icon_logo_2024.svg/1200px-Brooklyn_Nets_primary_icon_logo_2024.svg.png", // Brooklyn Nets
@@ -119,12 +128,80 @@ const teamImage = [
   "https://loodibee.com/wp-content/uploads/utah-jazz-logo-symbol.png" // Utah Jazz
 ];
 
-/* -------------------------- helper persistence -------------------------- */
-const ALL_TEAMS_KEY = "allTeams";
+const nflTeams = [
+  ["Buffalo Bills", "AFC", "East", "buf"], ["Miami Dolphins", "AFC", "East", "mia"],
+  ["New England Patriots", "AFC", "East", "ne"], ["New York Jets", "AFC", "East", "nyj"],
+  ["Baltimore Ravens", "AFC", "North", "bal"], ["Cincinnati Bengals", "AFC", "North", "cin"],
+  ["Cleveland Browns", "AFC", "North", "cle"], ["Pittsburgh Steelers", "AFC", "North", "pit"],
+  ["Houston Texans", "AFC", "South", "hou"], ["Indianapolis Colts", "AFC", "South", "ind"],
+  ["Jacksonville Jaguars", "AFC", "South", "jax"], ["Tennessee Titans", "AFC", "South", "ten"],
+  ["Denver Broncos", "AFC", "West", "den"], ["Kansas City Chiefs", "AFC", "West", "kc"],
+  ["Las Vegas Raiders", "AFC", "West", "lv"], ["Los Angeles Chargers", "AFC", "West", "lac"],
+  ["Dallas Cowboys", "NFC", "East", "dal"], ["New York Giants", "NFC", "East", "nyg"],
+  ["Philadelphia Eagles", "NFC", "East", "phi"], ["Washington Commanders", "NFC", "East", "wsh"],
+  ["Chicago Bears", "NFC", "North", "chi"], ["Detroit Lions", "NFC", "North", "det"],
+  ["Green Bay Packers", "NFC", "North", "gb"], ["Minnesota Vikings", "NFC", "North", "min"],
+  ["Atlanta Falcons", "NFC", "South", "atl"], ["Carolina Panthers", "NFC", "South", "car"],
+  ["New Orleans Saints", "NFC", "South", "no"], ["Tampa Bay Buccaneers", "NFC", "South", "tb"],
+  ["Arizona Cardinals", "NFC", "West", "ari"], ["Los Angeles Rams", "NFC", "West", "lar"],
+  ["San Francisco 49ers", "NFC", "West", "sf"], ["Seattle Seahawks", "NFC", "West", "sea"]
+];
 
+const nflTeamImage = nflTeams.map(([, , , abbreviation]) =>
+  `https://a.espncdn.com/i/teamlogos/nfl/500/${abbreviation}.png`
+);
+
+function createTeamArray(teams) {
+  return teams.flatMap(([name, conference, division]) => [
+    name, ["0", "0", ".000", "0", "0", "0", conference === "AFC" ? "E" : "W", division]
+  ]);
+}
+
+const sports = {
+  NBA: {
+    name: "NBA",
+    teams: defaultAllTeams,
+    logos: teamImage,
+    games: 82,
+    scoreBase: 87,
+    scoreRange: 30,
+    maxMatchups: 5,
+    storageKey: "nbaAllTeams"
+  },
+  NFL: {
+    name: "NFL",
+    teams: createTeamArray(nflTeams),
+    logos: nflTeamImage,
+    games: 17,
+    scoreBase: 14,
+    scoreRange: 24,
+    maxMatchups: 2,
+    storageKey: "nflAllTeams"
+  }
+};
+
+function configureSport(mode) {
+  activeSport = mode === "NFL" ? "NFL" : "NBA";
+  sportConfig = sports[activeSport];
+  defaultAllTeams = sportConfig.teams;
+  teamImage = sportConfig.logos;
+  appTitle.textContent = `${sportConfig.name} Simulator`;
+  document.title = `${sportConfig.name} Simulator`;
+  footerText.textContent = `Built with ❤️ — ${sportConfig.name} simulation mode`;
+  seasonTitle.textContent = `${sportConfig.name} Season Simulation`;
+  const conferences = isNFL() ? ["AFC", "NFC"] : ["Eastern Conference", "Western Conference"];
+  [eastConferenceTitle, modalEastConferenceTitle].forEach(element => element.textContent = conferences[0]);
+  [westConferenceTitle, modalWestConferenceTitle].forEach(element => element.textContent = conferences[1]);
+}
+
+function isNFL() {
+  return activeSport === "NFL";
+}
+
+/* -------------------------- helper persistence -------------------------- */
 function saveAllTeamsToLocal() {
   try {
-    localStorage.setItem(ALL_TEAMS_KEY, JSON.stringify(allTeams));
+    localStorage.setItem(sportConfig.storageKey, JSON.stringify(allTeams));
   } catch (e) {
     console.warn("Unable to persist allTeams:", e);
   }
@@ -132,9 +209,24 @@ function saveAllTeamsToLocal() {
 
 function loadAllTeamsFromLocal() {
   try {
-    const raw = localStorage.getItem(ALL_TEAMS_KEY);
+    const raw = localStorage.getItem(sportConfig.storageKey);
     if (!raw) return false;
-    allTeams = JSON.parse(raw);
+    const storedTeams = JSON.parse(raw);
+    if (isNFL()) {
+      const storedByName = new Map();
+      for (let i = 0; i < storedTeams.length; i += 2) {
+        storedByName.set(storedTeams[i], storedTeams[i + 1]);
+      }
+      allTeams = JSON.parse(JSON.stringify(defaultAllTeams));
+      for (let i = 0; i < allTeams.length; i += 2) {
+        const savedStats = storedByName.get(allTeams[i]);
+        if (savedStats) {
+          allTeams[i + 1].splice(0, 6, ...savedStats.slice(0, 6));
+        }
+      }
+    } else {
+      allTeams = storedTeams;
+    }
     return true;
   } catch (e) {
     console.warn("Unable to load allTeams:", e);
@@ -145,11 +237,10 @@ function loadAllTeamsFromLocal() {
 /* -------------------------- rating assignment -------------------------- */
 function determineTeamStrength() {
   const values = [];
-  for (let i = -15; i <= 15; i++) {
-    if (i !== 0) values.push(i / 2); // range: -7.5 to +7.5 (excludes 0 to avoid neutral teams, generates exactly 30 values)
+  for (let i = 0; i < getTeamCount(); i++) {
+    values.push(((i / Math.max(getTeamCount() - 1, 1)) * 15 - 7.5).toFixed(2));
   }
 
-  // Shuffle values to assign random team strengths
   for (let i = values.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [values[i], values[j]] = [values[j], values[i]];
@@ -158,7 +249,7 @@ function determineTeamStrength() {
   // Assign team strength and calculate offense/defense multipliers
   for (let i = 0; i < allTeams.length; i += 2) {
     const stats = allTeams[i + 1];
-    const strength = values[i / 2];
+    const strength = parseFloat(values[i / 2]);
     stats[5] = strength.toFixed(2); // Overall rating
 
     const normalized = (strength + 7.5) / 15; // maps to 0–1
@@ -185,8 +276,8 @@ function generateGameScoresByTeamNumber(homeTeamNum, awayTeamNum) {
   const homeStrength = parseFloat(allTeams[homeTeamIndex + 1][5]) || 0;
   const awayStrength = parseFloat(allTeams[awayTeamIndex + 1][5]) || 0;
 
-  let homeScore = Math.random() * 30 + 87;
-  let awayScore = Math.random() * 30 + 87;
+  let homeScore = Math.random() * sportConfig.scoreRange + sportConfig.scoreBase;
+  let awayScore = Math.random() * sportConfig.scoreRange + sportConfig.scoreBase;
 
   const strengthGap = homeStrength - awayStrength;
   const clampedImpact = Math.max(Math.min(strengthGap, 2.5), -2.5);
@@ -213,8 +304,8 @@ function generateGameScoresByTeamNumber(homeTeamNum, awayTeamNum) {
     awayScore -= upsetBias * (Math.random() * 3);
   }
 
-  homeScore *= ((Math.random() * 0.2) + 0.9);
-  awayScore *= ((Math.random() * 0.2) + 0.9);
+  homeScore *= ((Math.random() * (isNFL() ? 0.45 : 0.2)) + (isNFL() ? 0.8 : 0.9));
+  awayScore *= ((Math.random() * (isNFL() ? 0.45 : 0.2)) + (isNFL() ? 0.8 : 0.9));
 
   homeScore = Math.ceil(homeScore);
   awayScore = Math.floor(awayScore);
@@ -230,15 +321,20 @@ function generateGameScoresByTeamNumber(homeTeamNum, awayTeamNum) {
       homeScore = awayScore - targetDiff;
     }
 
-    if (homeScore < 85) homeScore = 85 + Math.floor(Math.random() * 5);
-    if (awayScore < 85) awayScore = 85 + Math.floor(Math.random() * 5);
+    if (isNFL()) {
+      homeScore = Math.max(homeScore, 3);
+      awayScore = Math.max(awayScore, 3);
+    } else {
+      if (homeScore < 85) homeScore = 85 + Math.floor(Math.random() * 5);
+      if (awayScore < 85) awayScore = 85 + Math.floor(Math.random() * 5);
+    }
   }
 
   let wentToOT = false;
   if (homeScore === awayScore) {
     wentToOT = true;
-    const homeBoost = (Math.random() * 4 + 5) + (homeStrength / 10);
-    const awayBoost = (Math.random() * 4 + 5) + (awayStrength / 10);
+      const homeBoost = isNFL() ? 3 + Math.random() * 4 : (Math.random() * 4 + 5) + (homeStrength / 10);
+      const awayBoost = isNFL() ? 3 + Math.random() * 4 : (Math.random() * 4 + 5) + (awayStrength / 10);
 
     homeScore += Math.round(homeBoost);
     awayScore += Math.round(awayBoost);
@@ -288,8 +384,6 @@ function applyGameResultToTeams(homeTeamNum, awayTeamNum, homeScore, awayScore, 
 let seasonRunState = null;
 
 // Constants for season simulation
-const MAX_MATCHUPS_BETWEEN_TEAMS = 5; // Allow up to 5 games between any two teams if needed to reach 82
-
 // Helper to get team count from allTeams array
 // Note: allTeams is structured as [teamName1, teamData1, teamName2, teamData2, ...]
 function getTeamCount() {
@@ -326,7 +420,7 @@ function findNextMatchup(matchupCounts) {
   const teamsNeedingGames = [];
   for (let i = 0; i < teamCount; i++) {
     const gamesPlayed = getTeamGamesPlayed(i);
-    if (gamesPlayed < 82) {
+    if (gamesPlayed < sportConfig.games) {
       teamsNeedingGames.push({ idx: i, gamesPlayed });
     }
   }
@@ -365,11 +459,12 @@ function findNextMatchup(matchupCounts) {
       const matchupCount = matchupCounts[teamA][teamB] || 0;
       
       // Allow up to MAX_MATCHUPS_BETWEEN_TEAMS games if both teams need games to reach 82
-      if (matchupCount >= MAX_MATCHUPS_BETWEEN_TEAMS) continue;
+      if (matchupCount >= sportConfig.maxMatchups) continue;
       
       // Prefer matchups with fewer previous games
       // Higher score = better matchup (teams need games more, played less)
-      const gamesNeeded = (82 - teamsNeedingGames[i].gamesPlayed) + (82 - teamsNeedingGames[j].gamesPlayed);
+      const gamesNeeded = (sportConfig.games - teamsNeedingGames[i].gamesPlayed) +
+        (sportConfig.games - teamsNeedingGames[j].gamesPlayed);
       const score = gamesNeeded * 100 - matchupCount * 10;
       
       if (score > bestScore) {
@@ -412,9 +507,10 @@ function renderStandings() {
 
 // Calculate clinch status for teams
 function calculateClinchStatus(teams, teamIndex) {
+  if (isNFL()) return '';
   const team = teams[teamIndex];
   const gamesPlayed = team.wins + team.losses;
-  const gamesRemaining = 82 - gamesPlayed;
+  const gamesRemaining = sportConfig.games - gamesPlayed;
   
   // Not enough games played yet to clinch anything
   if (gamesPlayed < 60) return '';
@@ -422,7 +518,7 @@ function calculateClinchStatus(teams, teamIndex) {
   // Check if clinched #1 seed (conference championship)
   if (teamIndex === 0) {
     const secondPlace = teams[1];
-    const maxSecondPlaceWins = secondPlace.wins + (82 - secondPlace.wins - secondPlace.losses);
+    const maxSecondPlaceWins = secondPlace.wins + (sportConfig.games - secondPlace.wins - secondPlace.losses);
     if (team.wins > maxSecondPlaceWins) {
       return 'z'; // Clinched conference
     }
@@ -431,7 +527,7 @@ function calculateClinchStatus(teams, teamIndex) {
   // Check if clinched playoffs (top 6)
   if (teamIndex < 6) {
     const seventhPlace = teams[6];
-    const maxSeventhWins = seventhPlace.wins + (82 - seventhPlace.wins - seventhPlace.losses);
+    const maxSeventhWins = seventhPlace.wins + (sportConfig.games - seventhPlace.wins - seventhPlace.losses);
     if (team.wins > maxSeventhWins) {
       return 'x'; // Clinched playoffs
     }
@@ -440,7 +536,7 @@ function calculateClinchStatus(teams, teamIndex) {
   // Check if clinched play-in (top 10)
   if (teamIndex < 10) {
     const eleventhPlace = teams[10];
-    const maxEleventhWins = eleventhPlace.wins + (82 - eleventhPlace.wins - eleventhPlace.losses);
+    const maxEleventhWins = eleventhPlace.wins + (sportConfig.games - eleventhPlace.wins - eleventhPlace.losses);
     if (team.wins > maxEleventhWins) {
       return 'y'; // Clinched play-in
     }
@@ -473,7 +569,8 @@ function renderConferenceStandings(tbody, conference) {
         pct: parseFloat(stats[2]),
         offRating: parseFloat(stats[3]),
         defRating: parseFloat(stats[4]),
-        overallRating: parseFloat(stats[5])
+        overallRating: parseFloat(stats[5]),
+        division: stats[7] || ''
       });
     }
   }
@@ -484,9 +581,22 @@ function renderConferenceStandings(tbody, conference) {
     return b.wins - a.wins;
   });
   
-  // Render table rows
+  // NFL standings are organized by the four real divisions in each conference.
   tbody.innerHTML = '';
-  teams.forEach((team, index) => {
+  const rows = isNFL()
+    ? ['East', 'North', 'South', 'West'].flatMap(division => {
+      const divisionTeams = teams.filter(team => team.division === division);
+      divisionTeams.sort((a, b) => b.pct - a.pct || b.wins - a.wins);
+      return [{ division }, ...divisionTeams];
+    })
+    : teams;
+  rows.forEach((team, index) => {
+    if (team.division && !team.name) {
+      const divisionRow = document.createElement('tr');
+      divisionRow.innerHTML = `<th colspan="7" style="color: var(--accent); padding-top: 14px;">${team.division} Division</th>`;
+      tbody.appendChild(divisionRow);
+      return;
+    }
     const row = document.createElement('tr');
     const logo = teamImage[team.teamIndex];
     const clinchStatus = calculateClinchStatus(teams, index);
@@ -593,12 +703,12 @@ function startSeasonSim() {
   const firstMatchup = findNextMatchup(matchupCounts);
   
   if (!firstMatchup) {
-    alert('All teams have already completed 82 games!');
+    alert(`All teams have already completed ${sportConfig.games} games!`);
     return;
   }
   
   // Calculate total games needed (each team plays 82 games, divide by 2 since each game involves 2 teams)
-  const totalGamesInSeason = (getTeamCount() * 82) / 2;
+  const totalGamesInSeason = (getTeamCount() * sportConfig.games) / 2;
   
   seasonRunState = {
     matchupCounts,
@@ -621,7 +731,7 @@ function renderSeasonGame() {
     // Season complete
     seasonTitle.textContent = 'Season Complete!';
     seasonGameCard.innerHTML = `
-      <h4>All teams have reached 82 games!</h4>
+      <h4>All teams have reached ${sportConfig.games} games!</h4>
       <p style="text-align: center; margin-top: 12px;">Total games simulated: ${gamesSimulated}</p>
     `;
     return;
@@ -694,7 +804,7 @@ function continueSeasonGame() {
   
   if (!currentMatchup) {
     // Season already complete
-    alert('Season is complete! All teams have reached 82 games.');
+    alert(`Season is complete! All teams have reached ${sportConfig.games} games.`);
     seasonRunState = null;
     seasonModal.classList.add('hidden');
     renderStandings();
@@ -761,6 +871,10 @@ function endSeasonSim() {
 let playoffState = null;
 
 function startPlayoffs() {
+  if (isNFL()) {
+    startNFLPlayoffs();
+    return;
+  }
   // Get sorted teams by conference
   const eastTeams = [];
   const westTeams = [];
@@ -781,7 +895,7 @@ function startPlayoffs() {
       westTeams.push(team);
     }
   }
-  
+
   // Sort teams
   const sortTeams = (a, b) => {
     if (b.pct !== a.pct) return b.pct - a.pct;
@@ -807,6 +921,103 @@ function startPlayoffs() {
   // Setup play-in games
   setupPlayInGames();
   showPlayoffBracket();
+}
+
+function startNFLPlayoffs() {
+  const teamsByConference = ["E", "W"].map(conference => {
+    const teams = [];
+    for (let i = 0; i < allTeams.length; i += 2) {
+      const stats = allTeams[i + 1];
+      if (stats[6] === conference) {
+        teams.push({
+          name: allTeams[i],
+          teamIndex: i / 2,
+          wins: parseInt(stats[0]),
+          losses: parseInt(stats[1]),
+          pct: parseFloat(stats[2]),
+          division: stats[7],
+          conference: conference === "E" ? "AFC" : "NFC"
+        });
+      }
+    }
+    const divisionWinners = ["East", "North", "South", "West"].map(division =>
+      teams.filter(team => team.division === division)
+        .sort((a, b) => b.pct - a.pct || b.wins - a.wins)[0]
+    );
+    const wildCards = teams
+      .filter(team => !divisionWinners.includes(team))
+      .sort((a, b) => b.pct - a.pct || b.wins - a.wins)
+      .slice(0, 3);
+    return [...divisionWinners.sort((a, b) => b.pct - a.pct || b.wins - a.wins), ...wildCards]
+      .map((team, index) => ({ ...team, seed: index + 1 }));
+  });
+
+  playoffState = {
+    round: "wild-card",
+    bracket: teamsByConference.flatMap(teams => {
+      const conference = teams[0].conference;
+      return [
+        { conference, seed1: 2, seed2: 7, home: teams[1], away: teams[6], series: [], winner: null },
+        { conference, seed1: 3, seed2: 6, home: teams[2], away: teams[5], series: [], winner: null },
+        { conference, seed1: 4, seed2: 5, home: teams[3], away: teams[4], series: [], winner: null }
+      ];
+    }),
+    byes: teamsByConference.map(teams => teams[0])
+  };
+  playoffState.currentGame = playoffState.bracket[0];
+  showPlayoffBracket();
+}
+
+function renderNFLBracket() {
+  const { round, bracket } = playoffState;
+  playoffTitle.textContent = `NFL Playoffs - ${getRoundName(round)}`;
+  let html = `<div class="nfl-bracket"><h4>Single-elimination playoff bracket</h4>`;
+  bracket.forEach(game => {
+    const result = game.series[0];
+    html += `<div class="result-card playoff-game">
+      <div class="team-line"><span>#${game.seed1} ${game.home.name}</span><strong>${result ? result.homeScore : "-"}</strong></div>
+      <div class="team-line"><span>#${game.seed2} ${game.away.name}</span><strong>${result ? result.awayScore : "-"}</strong></div>
+      ${game.winner ? `<div class="winner">${game.winner.name} advances</div>` : ""}
+    </div>`;
+  });
+  if (bracket.length && bracket.every(game => game.winner)) {
+    html += round === "finals"
+      ? `<p class="champion">${bracket[0].winner.name} are the NFL Champions!</p>`
+      : `<button id="continueToNextRound" class="btn primary">Continue to ${getRoundName(nextNFLRound(round))}</button>`;
+  }
+  playoffBracket.innerHTML = html;
+}
+
+function nextNFLRound(round) {
+  return round === "wild-card" ? "divisional" : round === "divisional" ? "conference-finals" : "finals";
+}
+
+function createNFLGame(conference, home, away) {
+  return { conference, home, away, seed1: home.seed, seed2: away.seed, series: [], winner: null };
+}
+
+function advanceNFLRound() {
+  const winners = playoffState.bracket.map(game => game.winner);
+  if (playoffState.round === "wild-card") {
+    playoffState.round = "divisional";
+    playoffState.bracket = ["AFC", "NFC"].flatMap(conference => {
+      const teams = [
+        playoffState.byes.find(team => team.conference === conference),
+        ...winners.filter(team => team.conference === conference)
+      ].sort((a, b) => a.seed - b.seed);
+      return [createNFLGame(conference, teams[0], teams[3]), createNFLGame(conference, teams[1], teams[2])];
+    });
+  } else if (playoffState.round === "divisional") {
+    playoffState.round = "conference-finals";
+    playoffState.bracket = ["AFC", "NFC"].map(conference => {
+      const teams = winners.filter(team => team.conference === conference);
+      return createNFLGame(conference, teams[0], teams[1]);
+    });
+  } else {
+    playoffState.round = "finals";
+    playoffState.bracket = [createNFLGame("Super Bowl", winners[0], winners[1])];
+  }
+  renderPlayoffBracket();
 }
 
 function setupPlayInGames() {
@@ -863,6 +1074,11 @@ function showPlayoffBracket() {
 }
 
 function renderPlayoffBracket() {
+  if (isNFL()) {
+    renderNFLBracket();
+    updateCurrentGameIndicator();
+    return;
+  }
   const { round, playInGames, eastPlayoffTeams, westPlayoffTeams, bracket } = playoffState;
   
   if (round === 'play-in') {
@@ -1124,6 +1340,17 @@ function renderPlayoffSeries(game) {
 
 function simulateNextPlayoffGame() {
   if (!playoffState) return;
+
+  if (isNFL()) {
+    const game = playoffState.bracket.find(g => !g.winner);
+    if (!game) return;
+    const { homeScore, awayScore } = generateGameScoresByTeamNumber(game.home.teamIndex, game.away.teamIndex);
+    const homeWon = homeScore > awayScore;
+    game.series[0] = { homeScore, awayScore, homeWon };
+    game.winner = homeWon ? game.home : game.away;
+    renderPlayoffBracket();
+    return;
+  }
   
   if (playoffState.round === 'play-in') {
     // Simulate play-in game
@@ -1197,6 +1424,11 @@ function checkRoundComplete() {
 
 function advanceToNextRound() {
   const { round, bracket } = playoffState;
+
+  if (isNFL()) {
+    advanceNFLRound();
+    return;
+  }
   
   if (round === 'first') {
     // Setup conference semifinals
@@ -1239,7 +1471,9 @@ function getRoundName(round) {
     case 'first': return 'First Round';
     case 'semifinals': return 'Conference Semifinals';
     case 'conference-finals': return 'Conference Finals';
-    case 'finals': return 'NBA Finals';
+    case 'finals': return `${sportConfig.name} Finals`;
+    case 'wild-card': return 'Wild Card Weekend';
+    case 'divisional': return 'Divisional Round';
     default: return 'Playoffs';
   }
 }
@@ -1255,6 +1489,22 @@ function updateCurrentGameIndicator() {
 /* -------------------------- Event listeners -------------------------- */
 simulateBtn.addEventListener('click', simulateSingleGame);
 simulateSeasonBtn.addEventListener('click', startSeasonSim);
+sportMode.addEventListener('change', () => {
+  configureSport(sportMode.value);
+  const loaded = loadAllTeamsFromLocal();
+  if (!loaded) {
+    allTeams = JSON.parse(JSON.stringify(defaultAllTeams));
+    determineTeamStrength();
+  }
+  seasonRunState = null;
+  playoffState = null;
+  lastResult.classList.add('hidden');
+  updateTeamSelects();
+  renderStandings();
+  seasonModal.classList.add('hidden');
+  standingsModal.classList.add('hidden');
+  playoffModal.classList.add('hidden');
+});
 
 seasonClose.addEventListener('click', () => {
   seasonRunState = null;
@@ -1302,6 +1552,7 @@ resetSeason.addEventListener('click', () => {
 
 /* -------------------------- Initialize on page load -------------------------- */
 (function initApp() {
+  configureSport(sportMode.value);
   // Initialize allTeams - load from storage or create fresh with ratings
   const loaded = loadAllTeamsFromLocal();
   if (!loaded) {

@@ -3,14 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NBA Simulator — Redesigned</title>
+  <title>Sports Simulator</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="container">
-      <h1>NBA Simulator</h1>
+      <h1 id="appTitle">NBA Simulator</h1>
       <div class="actions">
+        <label class="mode-picker">Mode
+          <select id="sportMode">
+            <option value="NBA">NBA</option>
+            <option value="NFL">NFL</option>
+          </select>
+        </label>
         <button id="resetSeason" class="btn">Reset Season</button>
         <button id="saveUser" class="btn primary">Save Progress</button>
       </div>
@@ -32,7 +38,7 @@
 
       <div class="sim-buttons">
         <button id="simulateBtn" class="btn primary">Simulate Game</button>
-        <button id="simulateSeasonBtn" class="btn">Simulate Full Season (All Teams)</button>
+        <button id="simulateSeasonBtn" class="btn">Simulate Full Season</button>
       </div>
 
       <div id="lastResult" class="result-card hidden"></div>
@@ -43,7 +49,7 @@
       
       <div class="conference-container">
         <div class="conference">
-          <h3>Eastern Conference</h3>
+          <h3 id="eastConferenceTitle">Eastern Conference</h3>
           <div class="standings-table-wrapper">
             <table class="standings-table">
               <thead>
@@ -64,7 +70,7 @@
         </div>
 
         <div class="conference">
-          <h3>Western Conference</h3>
+          <h3 id="westConferenceTitle">Western Conference</h3>
           <div class="standings-table-wrapper">
             <table class="standings-table">
               <thead>
@@ -108,7 +114,7 @@
       <h3>Season Standings</h3>
       <div class="modal-standings-grid">
         <div class="modal-conference">
-          <h4>Eastern Conference</h4>
+          <h4 id="modalEastConferenceTitle">Eastern Conference</h4>
           <table class="standings-table">
             <thead>
               <tr>
@@ -125,7 +131,7 @@
           </table>
         </div>
         <div class="modal-conference">
-          <h4>Western Conference</h4>
+          <h4 id="modalWestConferenceTitle">Western Conference</h4>
           <table class="standings-table">
             <thead>
               <tr>
@@ -149,7 +155,7 @@
   <div id="playoffModal" class="modal hidden">
     <div class="modal-content large">
       <button class="modal-close" id="playoffClose">×</button>
-      <h3 id="playoffTitle">NBA Playoffs</h3>
+      <h3 id="playoffTitle">Playoffs</h3>
       <div id="playoffBracket"></div>
       <div style="text-align:right;margin-top:12px;">
         <button id="simulatePlayoffGame" class="btn primary">Simulate Next Game</button>
@@ -159,7 +165,7 @@
   </div>
 
   <footer class="footer">
-    <div class="container">Built with ❤️ — 30 NBA Teams with Auto-Generated Ratings</div>
+    <div class="container" id="footerText">Built with ❤️ — NBA and NFL simulation modes</div>
   </footer>
 
   <script src="script.js"></script>
